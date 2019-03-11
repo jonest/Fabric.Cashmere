@@ -3,25 +3,30 @@ import { CommonModule } from '@angular/common';
 
 import { HcNotificationListComponent } from './notification-list/notification-list.component';
 import { HcNotificationItemComponent } from './notification-item/notification-item.component';
+import { HcNotificationDrawerComponent } from './notification-drawer.component';
 import { HcNotificationService } from './notification.service';
 import { ToasterModule } from '../toaster';
 import { IconModule } from '../icon';
 import { ButtonModule } from '../button';
+import { DrawerModule } from '../drawer';
 
 @NgModule({
     imports: [
         ToasterModule,
         CommonModule,
         IconModule,
-        ButtonModule
+        ButtonModule,
+        DrawerModule
     ],
     declarations: [
         HcNotificationListComponent,
-        HcNotificationItemComponent
+        HcNotificationItemComponent,
+        HcNotificationDrawerComponent
     ],
     exports: [
         HcNotificationListComponent,
-        HcNotificationItemComponent
+        HcNotificationItemComponent,
+        HcNotificationDrawerComponent
     ],
     providers: [
         HcNotificationService

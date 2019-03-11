@@ -1,0 +1,11 @@
+@import '../sass/colors';
+
+hc-drawer-container {
+    height: 100%;
+    .hc-drawer-content {
+        padding: 0;
+    }
+    hc-drawer {
+        background-color: $white;
+    }
+}
