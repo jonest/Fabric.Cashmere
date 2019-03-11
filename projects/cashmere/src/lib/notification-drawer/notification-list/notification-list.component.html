@@ -1,0 +1,14 @@
+<div class="hc-notification-list-container">
+    <div class="hc-notifications-list" *ngIf="showList; else noNotifications">
+        <div class="hc-notification-list-header">
+            <button hc-button buttonStyle="link" (click)="dismissAll()">{{dismissAllText}}</button>
+        </div>
+        <hc-notification-item *ngFor="let notification of notificationList" [notification]="notification">
+        </hc-notification-item>
+    </div>
+    <ng-template #noNotifications>
+        <div class="hc-no-notifications hc-font-bold hc-font-lg">
+            {{noNotificationsText}}
+        </div>
+    </ng-template>
+</div>

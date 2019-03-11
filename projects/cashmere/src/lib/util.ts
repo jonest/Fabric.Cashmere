@@ -36,3 +36,13 @@ export const untilDestroyed = (componentInstance, destroyMethodName = 'ngOnDestr
     }
     return source.pipe(takeUntil<T>(componentInstance['__takeUntilDestroy']));
 };
+
+
+// taken from https://stackoverflow.com/a/26502275/2370599
+export function newGuid(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        // tslint:disable-next-line:no-bitwise
+        const r: number = Math.random() * 16 | 0, v: number = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}

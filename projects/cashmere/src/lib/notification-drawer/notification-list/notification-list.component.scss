@@ -1,0 +1,29 @@
+@import '../../sass/colors';
+
+.hc-notification-list-container {
+    padding: 10px 18px 50px 10px;
+    min-width: 30rem;
+    max-width: 30rem;
+    overflow: hidden;
+
+    .hc-notifications-list {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        flex-grow: 100;
+
+        hc-notification-item {
+            width: 100%;
+        }
+
+        .hc-notification-list-header {
+            border-bottom: 2px solid $shadow;
+            margin-bottom: 5px;
+        }
+    }
+
+    .hc-no-notifications {
+        padding-top: 50px;
+        text-align: center;
+    }
+}

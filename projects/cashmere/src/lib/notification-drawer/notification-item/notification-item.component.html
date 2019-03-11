@@ -1,0 +1,20 @@
+<div class="hc-notification-item-container {{type}}" [title]="notification?.timeStamp | date:'medium'">
+    <div class="hc-notification-content">
+        <div class="hc-notification-icon-container">
+            <div class="hc-notification-icon"></div>
+        </div>
+        <div>
+            <h3 class="hc-notification-header" [title]="notification?.configuration?.header">
+                {{notification?.configuration?.header}}</h3>
+            <p class="hc-notification-body" [title]="notification?.configuration?.body">
+                {{notification?.configuration?.body}}
+            </p>
+        </div>
+        <div class="hc-notification-close">
+            <hc-icon fontSet="fa" fontIcon="fa-times" hcIconMd (click)="dismissNotification(notification)"></hc-icon>
+        </div>
+    </div>
+    <div class="hc-notification-footer">
+        {{notification?.timeStamp | date:'MMM d, h:mm:ss a'}}
+    </div>
+</div>
