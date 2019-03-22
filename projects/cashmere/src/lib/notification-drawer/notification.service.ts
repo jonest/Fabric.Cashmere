@@ -24,34 +24,62 @@ export class HcNotificationService {
 
     private _defaultClickDismiss: boolean = true;
 
+    /**
+     * Display a success notification and include it in the notification drawer
+     * @param config Configuration for how to display the notification
+     */
     public success(config: IHcNotificationConfig): IHcNotification {
         return this.notify(config, HcNotificationType.Success);
     }
 
+    /**
+     * Display an informational notification and include it in the notification drawer
+     * @param config Configuration for how to display the notification
+     */
     public info(config: IHcNotificationConfig): IHcNotification {
         return this.notify(config, HcNotificationType.Info);
     }
 
+    /**
+     * Display an alert notification and include it in the notification drawer
+     * @param config Configuration for how to display the notification
+     */
     public alert(config: IHcNotificationConfig): IHcNotification {
         return this.notify(config, HcNotificationType.Alert);
     }
 
+    /**
+     * Display a warning notification and include it in the notification drawer
+     * @param config Configuration for how to display the notification
+     */
     public warning(config: IHcNotificationConfig): IHcNotification {
         return this.notify(config, HcNotificationType.Warning);
     }
 
+    /**
+     * Get all the notifications
+     */
     public get notifications(): Array<IHcNotification> {
         return this._notifications;
     }
 
+    /**
+     * Dismisses a specific notification in the list
+     * @param dismiss The notification to dismiss from the list
+     */
     public dismiss(dismiss: IHcNotification): void {
         this._notifications = this._notifications.filter((notification: IHcNotification) => {
             return notification.id !== dismiss.id;
         });
 
         localStorage.setItem(HcNotificationService.StorageKey, JSON.stringify(this._notifications));
+
+
     }
 
+    /**
+     * Dismisses all notifications
+     */
     public dismissAll(): void {
         this._notifications = [];
         localStorage.setItem(HcNotificationService.StorageKey, JSON.stringify(this._notifications));

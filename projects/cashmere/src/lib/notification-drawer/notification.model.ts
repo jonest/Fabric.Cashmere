@@ -5,7 +5,7 @@ import { newGuid } from '../util';
 
 export class HcNotification implements IHcNotification {
     public readonly id: string;
-    public timeStamp: Date;
+    public readonly timeStamp: Date;
 
     constructor(public configuration: IHcNotificationConfig, public type: HcNotificationType) {
         this.id = newGuid();
