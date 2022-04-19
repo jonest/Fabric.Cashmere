@@ -1,6 +1,17 @@
 /* Based on an example posted by Paolo Caleffi at: https://github.com/angular/material2/issues/8312 */
 
-import {ChangeDetectionStrategy, Component, EventEmitter, HostBinding, HostListener, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    HostBinding,
+    HostListener,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewEncapsulation
+} from '@angular/core';
 import {BindObservable} from './bind-observable/bind-observable';
 import {untilDestroyed} from '../util';
 import {fromEvent, Observable, Subscription} from 'rxjs';
@@ -13,8 +24,9 @@ export class CellResizeEvent {
 @Component({
     selector: 'hc-cell-resizer',
     template: '<div class="hc-cell-resizer-left"></div><div class="hc-cell-resizer-right"></div>',
-    styleUrls: ['./cell-resizer.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: [],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    encapsulation: ViewEncapsulation.None
 })
 export class HcCellResizer implements OnInit, OnDestroy {
     /**
@@ -37,7 +49,7 @@ export class HcCellResizer implements OnInit, OnDestroy {
     }
     private _width!: number;
 
-    private _directionModifier: number = 1;
+    private _directionModifier = 1;
 
     private _mouseX: number;
 
@@ -110,7 +122,7 @@ export class HcCellResizer implements OnInit, OnDestroy {
     }
 
     // isResizing can be set to true only when the component is not disabled
-    @HostListener('mousedown', ['$event']) _startResizing(event: MouseEvent) {
+    @HostListener('mousedown', ['$event']) _startResizing(event: MouseEvent): void {
         this.isResizing = !this.disabled;
 
         this._mouseX = event.screenX;
@@ -129,5 +141,5 @@ export class HcCellResizer implements OnInit, OnDestroy {
     // Must be present for AOT compilation to work, even if empty
     // Otherwise 'ng build --prod' will optimize away any calls to ngOnDestroy,
     // even if the method is added by the untilDestroyed operator
-    public ngOnDestroy() {}
+    public ngOnDestroy(): void { return; }
 }

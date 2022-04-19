@@ -2,8 +2,6 @@ import {EventEmitter, Input, Output, OnInit, Component} from '@angular/core';
 import {coerceNumberProperty} from '@angular/cdk/coercion';
 import {Initializable} from '../shared/initializable';
 import {PageEvent} from './page-event';
-import {map, distinctUntilChanged} from 'rxjs/operators';
-import {Observable} from 'rxjs';
 
 /**
  * Base Pagination class for shared functionality
@@ -13,59 +11,102 @@ import {Observable} from 'rxjs';
 })
 export class BasePaginationComponent extends Initializable implements OnInit {
     public static _DEFAULT_PAGE_SIZE = 20;
+    private _inputCheckTimeoutSet = false;
 
     /**
      * The total number of items to be paged through
      */
-    @Input()
     get length(): number {
         return this._length;
     }
+    @Input()
     set length(value: number) {
         this._length = coerceNumberProperty(value);
+        this.ensureInputCheckTimeoutSet();
     }
-    private _length: number = 0;
+    private _length = 0;
 
-    private _pageNumber: number = 1;
+    private _prevPageNumber?: number;
+    private _pageNumber = 1;
     /** The currently displayed page. *Defaults to 1.* */
-    @Input()
     get pageNumber(): number {
         return this._pageNumber;
     }
+    @Input()
     set pageNumber(value: number) {
-        const prevPageNumber = this._pageNumber;
-        this._pageNumber = value;
-
-        const sanitizedValue = this._sanitizePageNumber(value);
-        if (sanitizedValue !== value) {
-            setTimeout(() => (this.pageNumber = sanitizedValue));
-        } else {
-            this._emitPageEvent(prevPageNumber);
-        }
+        this._pageNumber = coerceNumberProperty(value);
+        this.ensureInputCheckTimeoutSet();
     }
 
     /** Number of items to display on a page. *Defaults to 20.* */
-    @Input()
     get pageSize(): number {
         return this._pageSize;
     }
+    @Input()
     set pageSize(value: number) {
         this._pageSize = coerceNumberProperty(value);
         this._pageSizeUpdated();
+        this.ensureInputCheckTimeoutSet();
     }
+    private _prevPageSize?: number;
     private _pageSize: number = BasePaginationComponent._DEFAULT_PAGE_SIZE;
 
     /** Event emitted when the paginator changes the page size or page index. */
     @Output()
     readonly page: EventEmitter<PageEvent> = new EventEmitter<PageEvent>();
 
+    /** Emits the new page number when the page number changes. */
     @Output()
-    readonly pageNumberChange: Observable<number> = this.page.pipe(map(e => e.pageNumber));
+    readonly pageNumberChange: EventEmitter<number> = new EventEmitter<number>();
+    /** Emits the new page size when the page size changes. */
     @Output()
-    readonly pageSizeChange: Observable<number> = this.page.pipe(map(e => e.pageSize));
+    readonly pageSizeChange: EventEmitter<number> = new EventEmitter<number>();
 
-    ngOnInit() {
+    ngOnInit(): void {
         this._markInitialized();
+    }
+
+    private ensureInputCheckTimeoutSet(): void {
+        if (this._inputCheckTimeoutSet) {
+            return;
+        }
+
+        this._inputCheckTimeoutSet = true;
+
+        setTimeout(() => {
+            this._pageNumber = this._sanitizePageNumber(this._pageNumber);
+            const hasPageNumberChanges: boolean = this.shouldEmitPageNumberChangeEvent();
+            const hasPageSizeChanges: boolean = this.shouldEmitPageSizeChangeEvent();
+
+            if (hasPageNumberChanges) {
+                this.pageNumberChange.emit(this._pageNumber);
+            }
+
+            if (hasPageSizeChanges) {
+                this.pageSizeChange.emit(this.pageSize);
+            }
+
+            if (hasPageNumberChanges || hasPageSizeChanges) {
+                this._emitPageEvent(<number>this._prevPageNumber);
+            }
+
+            this._prevPageNumber = this._pageNumber;
+            this._prevPageSize = this._pageSize;
+
+            this._inputCheckTimeoutSet = false;
+        });
+    }
+
+    private shouldEmitPageNumberChangeEvent(): boolean {
+        const firstPageNumberToBeSet: boolean = this._prevPageNumber === undefined;
+        const pageNumberHasChanged: boolean = this._prevPageNumber !== this._pageNumber;
+        return !firstPageNumberToBeSet && pageNumberHasChanged;
+    }
+
+    private shouldEmitPageSizeChangeEvent(): boolean {
+        const firstPageSizeToBeSet: boolean = this._prevPageSize === undefined;
+        const pageSizeHasChanged: boolean = this._prevPageSize !== this._pageSize;
+        return !firstPageSizeToBeSet && pageSizeHasChanged;
     }
 
     /**
@@ -75,11 +116,11 @@ export class BasePaginationComponent extends Initializable implements OnInit {
         return Math.ceil(this._length / this._pageSize);
     }
 
-    get _isFirstPage() {
+    get _isFirstPage(): boolean {
         return this._pageNumber === 1;
     }
 
-    get _isLastPage() {
+    get _isLastPage(): boolean {
         return !!(this.totalPages && this._pageNumber === this.totalPages);
     }
 
@@ -91,7 +132,7 @@ export class BasePaginationComponent extends Initializable implements OnInit {
      * switching so that the page size is 5 will set the third page as the current page so
      * that the 11th item will still be displayed.
      */
-    _changePageSize(pageSize: number) {
+    _changePageSize(pageSize: number): void {
         // Current page needs to be updated to reflect the new page size. Navigate to the page
         // containing the previous page's first item.
         const startIndex = (this.pageNumber - 1) * this.pageSize;
@@ -99,11 +140,14 @@ export class BasePaginationComponent extends Initializable implements OnInit {
         this.pageNumber = Math.ceil(startIndex / pageSize) + 1;
     }
 
-    _pageSizeUpdated() {}
+    _pageSizeUpdated(): void {
+        // do nothing.
+    }
 
-    private _sanitizePageNumber(pageNumber: any): number {
-        const number = Math.max(coerceNumberProperty(pageNumber), 1);
-        return number > this.totalPages ? this.totalPages : number;
+    private _sanitizePageNumber(pageNumber: number): number {
+        const positivePageNumber = Math.max(pageNumber, 1);
+        const upperBound: number = Math.max(this.totalPages, 1);
+        return positivePageNumber > upperBound ? upperBound : positivePageNumber;
     }
 
     private _emitPageEvent(previousPageNumber: number) {

@@ -1,0 +1,80 @@
+::ng-deep .term-field li {
+    list-style-type: none;
+    margin-left: 8px;
+    margin-bottom: 2px;
+    display: table;
+}
+
+::ng-deep .term-field li::before {
+    content: "\2022 ";
+    display: table-cell;
+    padding-right: 10px;
+}
+
+.icon-left,
+.usage-submit-btn {
+    margin-right: 10px;
+}
+
+.icon-tile {
+    padding-bottom: 15px;
+}
+
+.icon-row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.usage-table-filters {
+    display: inline-flex;
+    justify-content: space-between;
+    margin: 20px 0;
+    width: 100%
+}
+
+.usage-table-filters_categories {
+    display: inline-flex;
+}
+
+.usage-table-filters-filter {
+    padding-left: 20px;
+    min-width: 200px;
+}
+
+.product-icon {
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1 1 auto;
+    width: 14%;
+    margin-right: 2%;
+    justify-content: center;
+}
+
+.product-icon img {
+    width: 80px;
+    height: 80px;
+}
+
+.product-icon p {
+    font-size: 14px;
+    text-align: center;
+    min-height: 45px;
+    width: 100%;
+}
+
+@media (max-width: 992px) {
+    .product-icon {
+        width: 25%;
+    }
+}
+
+@media (max-width: 576px) {
+    .product-icon {
+        width: 45%;
+    }
+}
+
+.loading-message {
+    width: 100%;
+    height: 350px;
+}

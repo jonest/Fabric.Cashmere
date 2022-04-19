@@ -16,11 +16,14 @@ import {DrawerToolbar} from './drawer-header.directive';
 
 const drawerThemes = ['dark-theme'];
 
-export function validateMenuDrawerTheme(menuTheme) {
+export function validateMenuDrawerTheme(menuTheme: string): void {
     if (!drawerThemes.some(theme => theme === menuTheme)) {
         throw new Error('Unsupported menuTheme: ' + menuTheme);
     }
 }
+
+const openStateAnimation = '0.75s ease';
+const closeStateAnimation = '0.7s .05s ease';
 
 /** Menu drawer that provides default themes */
 @Component({
@@ -31,7 +34,7 @@ export function validateMenuDrawerTheme(menuTheme) {
     animations: [
         trigger('openState', [
             state(
-                'open, open-instant',
+                'open-left, open-right, open-instant',
                 style({
                     transform: 'translate3d(0, 0, 0)',
                     visibility: 'visible'
@@ -45,7 +48,21 @@ export function validateMenuDrawerTheme(menuTheme) {
                 })
             ),
             transition('void => open-instant', animate('0ms')),
-            transition('void <=> open, open-instant => void', animate('400ms cubic-bezier(0.25, 0.8, 0.25, 1)'))
+            transition('open-instant => void', animate(openStateAnimation)),
+            transition('void => open-left', [
+                animate('0ms', style({ transform: 'translate3d(-100%, 0, 0)' })),
+                animate(closeStateAnimation)
+            ]),
+            transition('open-left => void', [
+                animate(openStateAnimation, style({ transform: 'translate3d(-100%, 0, 0)' }))
+            ]),
+            transition('void => open-right', [
+                animate('0ms', style({ transform: 'translate3d(100%, 0, 0)'})),
+                animate(closeStateAnimation)
+            ]),
+            transition('open-right => void', [
+                animate(openStateAnimation, style({ transform: 'translate3d(100%, 0, 0)' }))
+            ])
         ])
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -81,7 +98,7 @@ export class MenuDrawer extends Drawer implements AfterContentInit {
         this.menuTheme = 'dark-theme';
     }
 
-    ngAfterContentInit() {
+    ngAfterContentInit(): void {
         super.ngAfterContentInit();
 
         if (this.toolbar != null) {

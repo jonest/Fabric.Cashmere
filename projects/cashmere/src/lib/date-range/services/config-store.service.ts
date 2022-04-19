@@ -9,13 +9,18 @@ export class ConfigStoreService {
     private defaultOptions: DateRangeOptions = {
         presets: [],
         format: 'medium',
+        mode: 'date',
+        hourCycle: 12,
         excludeWeekends: false,
         locale: 'en-us',
         applyLabel: 'Apply',
         cancelLabel: 'Cancel',
-        startDatePrefix: 'Start Date',
-        endDatePrefix: 'End Date',
-        invalidDateLabel: 'Please enter valid date'
+        startDatePrefix: 'Start date:',
+        endDatePrefix: 'End date:',
+        invalidDateLabel: 'Please enter valid date',
+        center: false,
+        startDateIsRequired: true,
+        endDateIsRequired: true
     };
 
     private dateRangeOptionsSubject: BehaviorSubject<DateRangeOptions> = new BehaviorSubject<DateRangeOptions>(this.defaultOptions);
@@ -24,7 +29,19 @@ export class ConfigStoreService {
     private rangeUpdateSubject: BehaviorSubject<DateRange> = new BehaviorSubject<DateRange>({fromDate: undefined, toDate: undefined});
     public rangeUpdate$: Observable<DateRange>;
 
+    private presetUpdateSubject: BehaviorSubject<number | DateRange> = new BehaviorSubject<number | DateRange>({
+        fromDate: undefined,
+        toDate: undefined
+    });
+    public presetUpdate$: Observable<number | DateRange>;
+
     public weekendFilter: (d: D) => boolean = () => true;
+
+    private readonly emptyWeekendFilter = () => true;
+    private readonly excludeWeekendFilter = (d: Date): boolean => {
+        const day = d.getDay();
+        return day !== 0 && day !== 6;
+    };
 
     constructor() {
         this.dateRangeOptions$ = this.dateRangeOptionsSubject.pipe(
@@ -35,25 +52,31 @@ export class ConfigStoreService {
                 };
             }),
             tap((options: DateRangeOptions) => {
-                if (!!options.excludeWeekends) {
-                    this.weekendFilter = (d: Date): boolean => {
-                        const day = d.getDay();
-                        return day !== 0 && day !== 6;
-                    };
+                if (options.excludeWeekends) {
+                    this.weekendFilter = this.excludeWeekendFilter;
                 } else {
-                    this.weekendFilter = () => true;
+                    this.weekendFilter = this.emptyWeekendFilter;
                 }
             })
         );
 
         this.rangeUpdate$ = this.rangeUpdateSubject.pipe();
+        this.presetUpdate$ = this.presetUpdateSubject.pipe();
     }
 
-    updateDateRangeOptions(options: DateRangeOptions) {
+    updateDateRangeOptions(options: DateRangeOptions): void {
         this.dateRangeOptionsSubject.next(options);
     }
 
-    updateRange(dateRange: DateRange) {
+    updateRange(dateRange: DateRange): void {
         this.rangeUpdateSubject.next(dateRange);
+    }
+
+    updatePreset(value: number | DateRange): void {
+        this.presetUpdateSubject.next(value);
+    }
+
+    currentSelection(): DateRange {
+        return this.rangeUpdateSubject.value;
     }
 }

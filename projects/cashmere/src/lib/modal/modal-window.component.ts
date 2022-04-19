@@ -1,13 +1,26 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import {animate, state, style, transition, trigger} from '@angular/animations';
-import {ModalSize} from './modal-options';
-import {Component, ElementRef, HostBinding, HostListener, Input} from '@angular/core';
+import {ConfigurableFocusTrap, ConfigurableFocusTrapFactory} from '@angular/cdk/a11y';
+import {DOCUMENT} from '@angular/common';
+import {Component, ElementRef, HostBinding, HostListener, Inject, Optional, ViewChild, ViewEncapsulation} from '@angular/core';
 import {ActiveModal} from './active-modal';
 
 @Component({
     selector: 'hc-modal-window',
     template: `
-        <div [class]="'hc-modal hc-modal-' + _size"><ng-content></ng-content></div>
+        <div #focusTrapElement class="hc-modal {{_disableFullScreen ? '' : 'hc-modal-responsive'}}" cdkDrag [cdkDragDisabled]="!_isDraggable" cdkDragBoundary=".hc-modal-window">
+            <div *ngIf="_isDraggable" class="hc-modal-drag-handle" cdkDragHandle>
+                <svg width="24px" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M10 9h4V6h3l-5-5-5 5h3v3zm-1 1H6V7l-5 5 5 5v-3h3v-4zm14 2l-5-5v3h-3v4h3v3l5-5zm-9 3h-4v3H7l5 5 5-5h-3v-3z"></path>
+                    <path d="M0 0h24v24H0z" fill="none"></path>
+                </svg>
+            </div>
+            <ng-content></ng-content>
+        </div>
     `,
+    encapsulation: ViewEncapsulation.None,
+    host: {class: 'hc-modal-window'},
     styleUrls: ['./modal-window.component.scss'],
     animations: [
         trigger('fadeInOut', [
@@ -22,25 +35,37 @@ import {ActiveModal} from './active-modal';
     ]
 })
 export class ModalWindowComponent {
-    @Input()
     _ignoreOverlayClick = false;
-    @Input()
-    _size: ModalSize = 'auto';
+    _isDraggable = false;
+    _disableFullScreen = false;
+    _restoreFocus = true;
+    _autoFocus = false;
+    _previouslyFocusedElement: HTMLElement | null;
+    _focusTrap: ConfigurableFocusTrap | undefined;
 
-    constructor(private activeModal: ActiveModal, private el: ElementRef) {}
+    constructor(
+        private activeModal: ActiveModal,
+        private el: ElementRef,
+        @Optional() @Inject(DOCUMENT) private _document: any,
+        private _focusTrapFactory: ConfigurableFocusTrapFactory
+    ) {}
+
+    /** Reference to the element to build a focus trap around. */
+    @ViewChild('focusTrapElement')
+    private _focusTrapElement: ElementRef;
 
     @HostBinding('@fadeInOut')
-    _fadeInOut() {
+    _fadeInOut(): unknown {
         return state;
     }
 
-    @HostListener('click', ['$event'])
-    _overlayClick(event: any) {
+    @HostListener('mousedown', ['$event'])
+    _overlayClick(event: unknown): void {
         let modalContentNotPresent = true;
-        let path = this._eventPath(event);
-        let modalWindowTargetIncluded = path.findIndex(p => p === this.el.nativeElement) > -1;
-        let classList: (DOMTokenList | undefined)[] = path.map(p => p.classList);
-        for (let cl of classList) {
+        const path = this._eventPath(event);
+        const modalWindowTargetIncluded = path.findIndex(p => p === this.el.nativeElement) > -1;
+        const classList: (DOMTokenList | undefined)[] = path.map(p => p.classList);
+        for (const cl of classList) {
             if (cl) {
                 if (cl.contains('hc-modal-content')) {
                     modalContentNotPresent = false;
@@ -61,8 +86,8 @@ export class ModalWindowComponent {
     }
 
     // Serves as a polyfill for Event.composedPath() or Event.Path
-    _eventPath(evt: any) {
-        let path = (evt.composedPath && evt.composedPath()) || evt.path,
+    _eventPath(evt: any): typeof globalThis[] {
+        const path = (evt.composedPath && evt.composedPath()) || evt.path,
             target = evt.target;
 
         if (path != null) {
@@ -76,7 +101,7 @@ export class ModalWindowComponent {
 
         function _getParents(node, memo?) {
             memo = memo || [];
-            let parentNode = node.parentNode;
+            const parentNode = node.parentNode;
 
             if (!parentNode) {
                 return memo;
@@ -86,5 +111,29 @@ export class ModalWindowComponent {
         }
 
         return [target].concat(_getParents(target), window);
+    }
+
+    /** Save a reference to the element focused before the modal was opened. */
+    _savePreviouslyFocusedElement(): void {
+        if (this._document) {
+            this._previouslyFocusedElement = this._document.activeElement as HTMLElement;
+        }
+    }
+
+    /** Move the focus inside the focus trap and remember where to return later. */
+    _trapFocus(): void {
+        if (!this._focusTrapElement) {
+            return;
+        }
+
+        this._savePreviouslyFocusedElement();
+
+        if (!this._focusTrap && this._focusTrapElement) {
+            this._focusTrap = this._focusTrapFactory.create(this._focusTrapElement.nativeElement);
+        }
+
+        if (this._autoFocus && this._focusTrap) {
+            this._focusTrap.focusInitialElementWhenReady();
+        }
     }
 }

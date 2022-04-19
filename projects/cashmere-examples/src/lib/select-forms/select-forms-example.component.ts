@@ -10,13 +10,19 @@ import {FormControl} from '@angular/forms';
     styleUrls: ['select-forms-example.component.scss']
 })
 export class SelectFormsExampleComponent {
-    selectControl = new FormControl('chicken');
+    locations = [
+        {id: 1, dbaName: 'Tax Commission'},
+        {id: 2, dbaName: 'Insurance Department'},
+        {id: 3, dbaName: 'Environmental Quality'},
+    ];
 
-    setTaters() {
-        this.selectControl.setValue('taters');
+    selectControl = new FormControl(this.locations[0]);
+
+    setInsurance(): void {
+        this.selectControl.setValue(this.locations[1], {onlySelf: true});
     }
 
-    toggleActive() {
+    toggleActive(): void {
         if (this.selectControl.disabled) {
             this.selectControl.enable();
         } else {

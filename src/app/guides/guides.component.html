@@ -1,10 +1,19 @@
 <div class="hc-components-container">
     <hc-subnav class="responsive-subnav" fixedTop="true">
         <div class="subnav-container">
-            <span class="subnav-label">Guides: </span>
+            <span class="subnav-label"><hc-icon hcMenuIcon fontSet="fa" fontIcon="fa-graduation-cap" hcIconSm></hc-icon>Developer Guides:</span>
             <span class="subnav-select">
                 <hc-select [(ngModel)]="thisPage" (ngModelChange)="selectUpdate($event)">
-                    <option *ngFor="let option of selectOptions" [value]="option" [selected]="option === thisPage">{{option}}</option>
+                    <optgroup label="Using Cashmere">
+                        <ng-container *ngFor="let guide of guidesService.guides">
+                            <option *ngIf="guide.category == 'using'" [value]="guide.title" [selected]="guide.title === thisPage">{{guide.title}}</option>
+                        </ng-container>
+                    </optgroup>
+                    <optgroup label="Development">
+                        <ng-container *ngFor="let guide of guidesService.guides">
+                            <option *ngIf="guide.category == 'dev'" [value]="guide.title" [selected]="guide.title === thisPage">{{guide.title}}</option>
+                        </ng-container>
+                    </optgroup>
                 </hc-select>
             </span>
         </div>
@@ -12,6 +21,9 @@
 
     <div class="hc-components-left-column">
         <div class="hc-components-nav-container">
+            <h2>
+                <hc-icon hcMenuIcon fontSet="fa" fontIcon="fa-graduation-cap"></hc-icon>Developer Guides
+            </h2>
             <hc-tile>
                 <div class="hc-components-nav-list">
                     <hc-accordion triggerAlign="right" open='true'>
@@ -33,8 +45,10 @@
             </hc-tile>
         </div>
     </div>
-    <hc-tab-set class="full-height">
-        <hc-tab *ngFor="let guide of guidesService.guides" [tabTitle]="guide.title" [routerLink]="['/guides/', guide.route]">
-        </hc-tab>
-    </hc-tab-set>
+    <div class="hc-components-right-column">
+        <hc-tab-set class="full-height" [defaultTab]="queryTab">
+            <hc-tab *ngFor="let guide of guidesService.guides" [tabTitle]="guide.title" [routerLink]="['/web/guides/', guide.route]">
+            </hc-tab>
+        </hc-tab-set>
+    </div>
 </div>

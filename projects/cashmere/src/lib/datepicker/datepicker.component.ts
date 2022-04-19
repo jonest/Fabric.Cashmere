@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     Component,
     ViewEncapsulation,
@@ -19,19 +21,14 @@ import {DateAdapter} from './datetime/date-adapter';
 import {createMissingDateImplError} from './datetime/datepicker-errors';
 import {Subject, Subscription, merge} from 'rxjs';
 import {ScrollStrategy, Overlay, ComponentType, OverlayRef, OverlayConfig, PositionStrategy} from '@angular/cdk/overlay';
-import {coerceBooleanProperty} from './utils/boolean-property';
+import {parseBooleanAttribute} from '../util';
 import {HcCalendarCellCssClasses} from './calendar-body/calendar-body.component';
-import {HcDialogRef} from '../dialog/dialog-ref';
 import {DatepickerContentComponent} from './datepicker-content/datepicker-content.component';
 import {ComponentPortal} from '@angular/cdk/portal';
 import {DatepickerInputDirective} from './datepicker-input/datepicker-input.directive';
-import {DialogService} from '../dialog/dialog.service';
 import {Directionality} from '@angular/cdk/bidi';
-import {DOCUMENT} from '@angular/platform-browser';
+import {DOCUMENT} from '@angular/common';
 import {take, filter} from 'rxjs/operators';
-import {ESCAPE, UP_ARROW} from '@angular/cdk/keycodes';
-
-// tslint:disable:no-output-rename
 
 /** Used to generate a unique ID for each datepicker instance. */
 let datepickerUid = 0;
@@ -57,7 +54,7 @@ export class HcDatepickerContentBase {
     constructor(public _elementRef: ElementRef) {}
 }
 
-/** Component responsible for managing the datepicker popup/dialog. */
+/** Component responsible for managing the datepicker popup */
 @Component({
     selector: 'hc-datepicker',
     template: '',
@@ -69,9 +66,41 @@ export class HcDatepickerContentBase {
 export class DatepickerComponent implements OnDestroy {
     private _scrollStrategy: () => ScrollStrategy;
 
+    /**
+     * Whether the datepicker includes the calendar, time selector, or both. Defaults to `date`.
+     */
+    @Input()
+    get mode(): 'date' | 'time' | 'date-time' {
+        return this._mode;
+    }
+    set mode( value: 'date' | 'time' | 'date-time' ) {
+        this._mode = value;
+        if ( this._selected ) {
+            this._selectedChanged.next(this._selected);
+        }
+    }
+    private _mode: 'date' | 'time' | 'date-time' = 'date';
+
+    /**
+     * Whether the time picker uses a 12 or 24 hour clock. Defaults to 12.
+     */
+    @Input()
+    get hourCycle(): string | number {
+        return this._hourCycle;
+    }
+    set hourCycle( value: string | number ) {
+        if ( +value !== this._hourCycle) {
+            this._hourCycle = +value;
+            if ( this._selected ) {
+                this._selectedChanged.next(this._selected);
+            }
+        }
+    }
+    private _hourCycle = 12;
+
     /** An input indicating the type of the custom header component for the calendar, if set. */
     @Input()
-    calendarHeaderComponent: ComponentType<any>;
+    calendarHeaderComponent: ComponentType<unknown>;
 
     /** The date to open the calendar to initially. */
     @Input()
@@ -89,26 +118,13 @@ export class DatepickerComponent implements OnDestroy {
     @Input()
     startView: 'month' | 'year' | 'multi-year' = 'month';
 
-    /**
-     * Whether the calendar UI is in touch mode. In touch mode the calendar opens in a dialog rather
-     * than a popup and elements have more padding to allow for bigger touch targets.
-     */
-    @Input()
-    get touchUi(): boolean {
-        return this._touchUi;
-    }
-    set touchUi(value: boolean) {
-        this._touchUi = coerceBooleanProperty(value);
-    }
-    private _touchUi = false;
-
     /** Whether the datepicker pop-up should be disabled. */
     @Input()
     get disabled(): boolean {
         return this._disabled === undefined && this._datepickerInput ? this._datepickerInput.disabled : !!this._disabled;
     }
     set disabled(value: boolean) {
-        const newValue = coerceBooleanProperty(value);
+        const newValue = parseBooleanAttribute(value);
 
         if (newValue !== this._disabled) {
             this._disabled = newValue;
@@ -158,7 +174,7 @@ export class DatepickerComponent implements OnDestroy {
     private _opened = false;
 
     /** The id for the datepicker calendar. */
-    id: string = `hc-datepicker-${datepickerUid++}`;
+    id = `hc-datepicker-${datepickerUid++}`;
 
     /** The currently selected date. */
     get _selected(): D | null {
@@ -184,10 +200,7 @@ export class DatepickerComponent implements OnDestroy {
     }
 
     /** A reference to the overlay when the calendar is opened as a popup. */
-    _popupRef: OverlayRef;
-
-    /** A reference to the dialog when the calendar is opened as a dialog. */
-    private _dialogRef: HcDialogRef<DatepickerContentComponent> | null;
+    _popupRef: OverlayRef | null;
 
     /** A portal containing the calendar for this datepicker. */
     private _calendarPortal: ComponentPortal<DatepickerContentComponent>;
@@ -211,7 +224,6 @@ export class DatepickerComponent implements OnDestroy {
     readonly _selectedChanged = new Subject<D>();
 
     constructor(
-        private _dialog: DialogService,
         private _overlay: Overlay,
         private _ngZone: NgZone,
         private _viewContainerRef: ViewContainerRef,
@@ -229,7 +241,7 @@ export class DatepickerComponent implements OnDestroy {
         this._scrollStrategy = scrollStrategy;
     }
 
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         this.close();
         this._inputSubscription.unsubscribe();
         this._disabledChange.complete();
@@ -280,10 +292,10 @@ export class DatepickerComponent implements OnDestroy {
             throw Error('Attempted to open an hcDatepicker with no associated input.');
         }
         if (this._document) {
-            this._focusedElementBeforeOpen = this._document.activeElement;
+            this._focusedElementBeforeOpen = this._document.activeElement as HTMLElement;
         }
 
-        this.touchUi ? this._openAsDialog() : this._openAsPopup();
+        this._openAsPopup();
         this._opened = true;
         this.openedStream.emit();
     }
@@ -295,10 +307,8 @@ export class DatepickerComponent implements OnDestroy {
         }
         if (this._popupRef && this._popupRef.hasAttached()) {
             this._popupRef.detach();
-        }
-        if (this._dialogRef) {
-            this._dialogRef.close();
-            this._dialogRef = null;
+            this._popupRef.dispose();
+            this._popupRef = null;
         }
         if (this._calendarPortal && this._calendarPortal.isAttached) {
             this._calendarPortal.detach();
@@ -327,26 +337,6 @@ export class DatepickerComponent implements OnDestroy {
         }
     }
 
-    /** Open the calendar as a dialog. */
-    private _openAsDialog(): void {
-        // Usually this would be handled by `open` which ensures that we can only have one overlay
-        // open at a time, however since we reset the variables in async handlers some overlays
-        // may slip through if the user opens and closes multiple times in quick succession (e.g.
-        // by holding down the enter key).
-        if (this._dialogRef) {
-            this._dialogRef.close();
-        }
-
-        this._dialogRef = this._dialog.open<DatepickerContentComponent>(DatepickerContentComponent, {
-            direction: this._dir ? this._dir.value : 'ltr',
-            viewContainerRef: this._viewContainerRef,
-            panelClass: 'hc-datepicker-dialog'
-        });
-
-        this._dialogRef.afterClosed().subscribe(() => this.close());
-        this._dialogRef.componentInstance.datepicker = this;
-    }
-
     /** Open the calendar as a popup. */
     private _openAsPopup(): void {
         if (!this._calendarPortal) {
@@ -357,7 +347,7 @@ export class DatepickerComponent implements OnDestroy {
             this._createPopup();
         }
 
-        if (!this._popupRef.hasAttached()) {
+        if (this._popupRef && !this._popupRef.hasAttached()) {
             this._popupComponentRef = this._popupRef.attach(this._calendarPortal);
             this._popupComponentRef.instance.datepicker = this;
 
@@ -366,7 +356,7 @@ export class DatepickerComponent implements OnDestroy {
                 .asObservable()
                 .pipe(take(1))
                 .subscribe(() => {
-                    this._popupRef.updatePosition();
+                    if (this._popupRef) { this._popupRef.updatePosition(); }
                 });
         }
     }
@@ -391,7 +381,7 @@ export class DatepickerComponent implements OnDestroy {
             this._popupRef.keydownEvents().pipe(
                 filter(event => {
                     // Closing on alt + up is only valid when there's an input associated with the datepicker.
-                    return event.keyCode === ESCAPE || (this._datepickerInput && event.altKey && event.keyCode === UP_ARROW);
+                    return event.key === 'Escape' || (this._datepickerInput && event.altKey && event.key === 'ArrowUp');
                 })
             )
         ).subscribe(() => this.close());
@@ -419,7 +409,7 @@ export class DatepickerComponent implements OnDestroy {
                     originX: 'start',
                     originY: 'top',
                     overlayX: 'start',
-                    overlayY: 'bottom'
+                    overlayY: 'center'
                 },
                 {
                     originX: 'end',
@@ -431,7 +421,8 @@ export class DatepickerComponent implements OnDestroy {
                     originX: 'end',
                     originY: 'top',
                     overlayX: 'end',
-                    overlayY: 'bottom'
+                    overlayY: 'bottom',
+                    offsetY: 60
                 }
             ]);
     }

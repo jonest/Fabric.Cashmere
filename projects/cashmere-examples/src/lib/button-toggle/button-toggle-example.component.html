@@ -1,0 +1,24 @@
+Single Select
+<hr />
+<hc-button-toggle-group [formControl]="isGridView" [valueRequired]="true">
+    <hc-button-toggle [value]="true">Grid</hc-button-toggle>
+    <hc-button-toggle [value]="false">List</hc-button-toggle>
+</hc-button-toggle-group>
+<br>
+<code>
+  isGridView:
+  <em>{{ isGridView.value }}</em>
+</code>
+<br>
+<br>
+Multiple Select
+<hr />
+<hc-button-toggle-group buttonStyle="primary" multiple='true' [formControl]="condiments">
+    <hc-button-toggle value='Ketchup' [selected]='true'>Ketchup</hc-button-toggle>
+    <hc-button-toggle value='Mustard' [selected]='true'>Mustard</hc-button-toggle>
+    <hc-button-toggle value='Mayo'>Mayo</hc-button-toggle>
+</hc-button-toggle-group>
+<br>
+<code>
+    Selected: {{ condiments.value.join(", ") }}
+</code>

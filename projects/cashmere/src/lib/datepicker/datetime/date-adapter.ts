@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /**
  * @license
  * Copyright Health Catalyst All Rights Reserved.
@@ -20,18 +22,10 @@ export function HC_DATE_LOCALE_FACTORY(): string {
     return inject(LOCALE_ID);
 }
 
-/**
- * No longer needed since HC_DATE_LOCALE has been changed to a scoped injectable.
- * If you are importing and providing this in your code you can simply remove it.
- * @deprecated
- * @breaking-change 8.0.0
- */
-export const HC_DATE_LOCALE_PROVIDER = {provide: HC_DATE_LOCALE, useExisting: LOCALE_ID};
-
 /** Adapts type `D` to be usable as a date by cdk-based components that work with dates. */
 export abstract class DateAdapter<D> {
     /** The locale to use for all dates. */
-    protected locale: any;
+    protected locale;
 
     /** A stream that emits when the locale changes. */
     get localeChanges(): Observable<void> {
@@ -59,6 +53,9 @@ export abstract class DateAdapter<D> {
      * @returns The month component (1-indexed, 1 = first of month).
      */
     abstract getDate(date: D): number;
+
+    abstract getHours(date: D): number;
+    abstract getMinutes(date: D): number;
 
     /**
      * Gets the day of the week component of the given date.
@@ -244,7 +241,9 @@ export abstract class DateAdapter<D> {
         return (
             this.getYear(first) - this.getYear(second) ||
             this.getMonth(first) - this.getMonth(second) ||
-            this.getDate(first) - this.getDate(second)
+            this.getDate(first) - this.getDate(second) ||
+            this.getHours(first) - this.getHours(second) ||
+            this.getMinutes(first) - this.getMinutes(second)
         );
     }
 

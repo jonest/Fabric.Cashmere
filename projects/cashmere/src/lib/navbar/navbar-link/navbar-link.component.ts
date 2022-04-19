@@ -1,14 +1,23 @@
-import {ChangeDetectorRef, Component, ElementRef, HostBinding, Input} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, Input, ViewEncapsulation} from '@angular/core';
+import {parseBooleanAttribute} from '../../util';
 
 /** Primary navigation links */
 @Component({
     selector: 'hc-navbar-link',
-    templateUrl: './navbar-link.component.html'
+    templateUrl: './navbar-link.component.html',
+    encapsulation: ViewEncapsulation.None
 })
 export class NavbarLinkComponent {
-    /** (optional) forces active state *Default is `null`.* */
+    _active: boolean | null;
+
+    /** Forces active state. Overrides router state when set; to remove the override set to null. *Default is `null`.* */
     @Input()
-    active?: boolean;
+    get active(): boolean | null {
+        return this._active;
+    }
+    set active(value: boolean | null) {
+        this._active = value !== null ? parseBooleanAttribute(value): null;
+    }
 
     /** RouterLink uri. See https://angular.io/api/router/RouterLink */
     @Input()
@@ -22,25 +31,25 @@ export class NavbarLinkComponent {
      * See https://angular.io/api/router/RouterLinkActive#description
      */
     @Input()
-    exact: boolean = false;
+    exact = false;
 
-    _hidden: boolean = false;
+    _hidden = false;
 
     constructor(private el: ElementRef, private ref: ChangeDetectorRef) {}
 
     /** Disable visibility of component from view */
-    hide() {
+    hide(): void {
         this._hidden = true;
         this.ref.detectChanges();
     }
 
     /** Enable visibility of component from view */
-    show() {
+    show(): void {
         this._hidden = false;
         this.ref.detectChanges();
     }
 
-    _getWidth() {
+    _getWidth(): number {
         return this.el.nativeElement.scrollWidth;
     }
 }

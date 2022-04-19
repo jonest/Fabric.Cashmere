@@ -4,7 +4,7 @@ import {CalendarComponent} from '../calendar/calendar.component';
 import {DatepickerComponent} from '../datepicker.component';
 
 /**
- * Component used as the content for the datepicker dialog and popup. We use this instead of using
+ * Component used as the content for the datepicker popup. We use this instead of using
  * hcCalendar directly as the content so we can control the initial focus. This also gives us a
  * place to put additional features of the popup that are not part of the calendar itself in the
  * future. (e.g. confirmation buttons).
@@ -13,11 +13,9 @@ import {DatepickerComponent} from '../datepicker.component';
 @Component({
     selector: 'hc-datepicker-content',
     templateUrl: './datepicker-content.component.html',
-    // tslint:disable-next-line:use-host-property-decorator
     host: {
         class: 'hc-datepicker-content',
-        '[@transformPanel]': '"enter"',
-        '[class.hc-datepicker-content-touch]': 'datepicker.touchUi'
+        '[@transformPanel]': '"enter"'
     },
     animations: [HcDatepickerAnimations.transformPanel, HcDatepickerAnimations.fadeInCalendar],
     exportAs: 'hcDatepickerContent',
@@ -35,7 +33,14 @@ export class DatepickerContentComponent implements AfterViewInit {
     /** Whether the datepicker is above or below the input. */
     _isAbove: boolean;
 
-    ngAfterViewInit() {
+    ngAfterViewInit(): void {
         this._calendar.focusActiveCell();
+    }
+
+    /** Close the datepicker automatically on selection only if in date mode */
+    autoClose(): void {
+        if (this.datepicker.mode === 'date') {
+            this.datepicker.close();
+        }
     }
 }

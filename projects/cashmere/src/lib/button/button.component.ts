@@ -1,21 +1,19 @@
-/* tslint:disable:component-selector */
-/* tslint:disable:use-host-property-decorator */
-
 import {ChangeDetectionStrategy, Component, ElementRef, Input, Renderer2, ViewEncapsulation} from '@angular/core';
 import {parseBooleanAttribute} from '../util';
 
-const supportedStyles = ['primary', 'primary-alt', 'destructive', 'neutral', 'secondary', 'minimal', 'link', 'link-inline'];
+export const supportedStyles = ['primary', 'primary-alt', 'destructive', 'neutral', 'secondary', 'minimal', 'link', 'link-inline'];
+const supportedColors = ['blue', 'green', 'purple', 'red', 'orange', 'ruby-red', 'deep-red', 'red-orange', 'magenta', 'pink', 'light-pink', 'azure', 'teal', 'dark-green', 'brown', 'purple-gray', 'yellow', 'yellow-orange', 'tan'];
 const supportedSizes = ['sm', 'md', 'lg'];
 
-export function validateStyleInput(style: string) {
-    if (supportedStyles.indexOf(style) < 0) {
-        throw Error('Unsupported style input value: ' + style);
+export function validateStyleInput(style: string, component: string): void {
+    if (supportedStyles.indexOf(style) < 0 && supportedColors.indexOf(style) < 0) {
+        throw Error('Unsupported buttonStyle attribute value on ' + component + ': ' + style);
     }
 }
 
-export function validateSizeInput(size: string) {
+export function validateSizeInput(size: string, component: string): void {
     if (supportedSizes.indexOf(size) < 0) {
-        throw Error('Unsupported size input value: ' + size);
+        throw Error('Unsupported size attribute value on ' + component + ': ' + size);
     }
 }
 
@@ -23,6 +21,7 @@ const buttonAttributes = ['hc-icon-button', 'hc-button'];
 
 /** Cashmere styled button */
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'button[hc-button], button[hc-icon-button]',
     template: '<ng-content></ng-content>',
     styleUrls: ['./button.component.scss'],
@@ -37,28 +36,19 @@ export class ButtonComponent {
     private _style: string;
     private _size: string;
 
-    /**
-     * @deprecated
-     * @description Use `buttonStyle` instead
-     * */
-    @Input()
-    get color(): string {
-        return this.buttonStyle;
-    }
-
-    set color(btnStyle: string) {
-        this.buttonStyle = btnStyle;
-    }
-
     /** Sets style of button. Choose from: `'primary' | 'primary-alt' | 'destructive' |
-     * 'neutral' | 'secondary' | 'minimal' | link' | 'link-inline'` */
+     * 'neutral' | 'secondary' | 'minimal' | link' | 'link-inline'`. If needed, colors from
+     * the primary or secondary palette may be used as well (e.g. 'pink', 'red-orange', etc) */
     @Input()
     get buttonStyle(): string {
         return this._style;
     }
 
     set buttonStyle(btnStyle: string) {
-        validateStyleInput(btnStyle);
+        validateStyleInput(btnStyle, 'ButtonComponent');
+        if ( supportedStyles.indexOf(btnStyle) < 0 ) {
+            btnStyle = "button-" + btnStyle;
+        }
         this.setHostClass(this._style, btnStyle);
         this._style = btnStyle;
     }
@@ -70,7 +60,7 @@ export class ButtonComponent {
     }
 
     set size(size: string) {
-        validateSizeInput(size);
+        validateSizeInput(size, 'ButtonComponent');
         this.setHostClass(this._size, size);
         this._size = size;
     }
@@ -81,7 +71,7 @@ export class ButtonComponent {
         return this._disabled;
     }
 
-    set disabled(isDisabled) {
+    set disabled(isDisabled: boolean) {
         this._disabled = parseBooleanAttribute(isDisabled);
     }
 

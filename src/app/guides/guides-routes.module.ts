@@ -5,19 +5,20 @@ import {NgModule} from '@angular/core';
 
 const routes: Routes = [
     {
-        path: 'guides',
+        path: 'web/guides',
         component: GuidesComponent,
         children: [
             {
                 path: ':id',
                 component: GuideComponent
-            }
+            },
+            {path: '**', redirectTo: 'getting-started'}
         ]
     }
 ];
 
 @NgModule({
-    imports: [RouterModule.forChild(routes)],
+    imports: [RouterModule.forRoot(routes, { relativeLinkResolution: 'legacy' })],
     exports: [RouterModule]
 })
 export class GuidesRoutesModule {}

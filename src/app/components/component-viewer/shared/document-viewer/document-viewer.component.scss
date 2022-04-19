@@ -1,13 +1,14 @@
 @import 'scss/colors';
 @import 'scss/functions';
-@import 'scss/mixins.scss';
+@import 'scss/mixins';
+@import 'scss/variables';
 
 .hc-doc-viewer {
     display: block;
-}
 
-.hc-tile:first-of-type {
-    margin-top: 20px;
+    .hc-tile:first-of-type {
+        margin-top: 20px;
+    }
 }
 
 .docs-api-h3 {
@@ -30,6 +31,10 @@
     font-weight: 600;
     @include fontSize(16px);
     margin: 30px 0 5px 0;
+}
+
+p.docs-api-module-import code {
+    color: $dark-blue;
 }
 
 .docs-api-class-extends-clauses {
@@ -60,9 +65,7 @@
 
     code {
         @include fontSize(13px);
-        background-color: unset;
         border-radius: unset;
-        padding: unset;
         font-weight: unset;
         line-height: unset;
     }
@@ -91,11 +94,9 @@
     }
 
     code {
-        @include fontSize(13px);
-        color: $text;
-        background-color: unset;
+        @include fontSize(14px);
+        color: $dark-blue;
         border-radius: unset;
-        padding: unset;
         font-weight: unset;
         line-height: unset;
     }
@@ -106,7 +107,7 @@
     padding-left: 25px;
     padding-top: 0 !important;
     color: $text !important;
-    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+    font-family: $default-font-family !important;
 }
 
 .docs-api-method-parameter-name {
@@ -115,13 +116,14 @@
     margin-top: 0;
 }
 
-.docs-api-method-parameter-type,
-.docs-api-method-returns-type {
+code.docs-api-method-parameter-type,
+code.docs-api-method-returns-type {
     font-size: 0.85714286rem !important;
+    color: $slate-gray-500;
 }
 
-.docs-api-method-returns-type {
-    padding-left: 25px !important;
+code.docs-api-method-returns-type {
+    margin-left: 25px !important;
 }
 
 .docs-api-method-name-cell {

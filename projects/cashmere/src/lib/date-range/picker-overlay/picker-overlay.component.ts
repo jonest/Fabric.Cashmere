@@ -1,26 +1,47 @@
-import {Component, OnInit, ViewEncapsulation, ChangeDetectorRef, AfterViewInit, ViewChildren, QueryList} from '@angular/core';
-import {DateRangeOptions} from '../model/model';
+import {Component, OnInit, ViewEncapsulation, AfterViewInit, ViewChildren, ChangeDetectionStrategy, ChangeDetectorRef, EventEmitter} from '@angular/core';
+import type {QueryList} from '@angular/core';
+import {DateRangeOptions, PresetItem} from '../model/model';
 import {OverlayRef} from '@angular/cdk/overlay';
 import {ConfigStoreService} from '../services/config-store.service';
 import {DateRange} from '../model/model';
 import {D} from '../../datepicker/datetime/date-formats';
 import {CalendarWrapperComponent} from '../calendar-wrapper/calendar-wrapper.component';
 import {Observable} from 'rxjs';
-import {map} from 'rxjs/operators';
 
 // ** Date range wrapper component */
 @Component({
     selector: 'hc-date-range-picker-overlay',
     templateUrl: './picker-overlay.component.html',
     styleUrls: ['./picker-overlay.component.scss'],
-    encapsulation: ViewEncapsulation.None
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PickerOverlayComponent implements OnInit, AfterViewInit {
     options$: Observable<DateRangeOptions>;
-    _fromDate: D | undefined;
-    _toDate: D | undefined;
-    _disabled: boolean;
-    _selectedPreset: DateRange | null;
+    set _fromDate(fd: D | undefined) { this.__fromDate = fd; this.cd.markForCheck(); }
+    get _fromDate(): D | undefined { return this.__fromDate; }
+    set _toDate(td: D | undefined) { this.__toDate = td; this.cd.markForCheck(); }
+    get _toDate(): D | undefined { return this.__toDate; }
+    set _selectedPreset(s: number | null ) { this.__selectedPreset = s; this.cd.markForCheck(); }
+    get _selectedPreset(): number | null { return this.__selectedPreset; }
+    set _rangeIsInvalid(isInvalid: boolean) { this.__rangeIsInvalid = isInvalid; this.cd.markForCheck(); }
+    get _rangeIsInvalid(): boolean { return this.__rangeIsInvalid; }
+    get _invalidRangeErrorMessage(): string | null { return this.__invalidRangeErrorMessage; }
+    _presetValues: PresetItem[] | undefined;
+    _skipRangeCheck = false;
+
+    __fromDate: D | undefined;
+    __toDate: D | undefined;
+    __selectedPreset: number | null;
+    __rangeIsInvalid = false; // if true, the fromDate is after the toDate and save will not be allowed
+    __invalidRangeErrorMessage: string | null;
+    _fromDateIsRequired?: boolean = true;
+    _toDateIsRequired?: boolean = true;
+
+    __startDatePrefix: string | undefined;
+    __endDatePrefix: string | undefined;
+
+    readonly _dismissed: EventEmitter<boolean> = new EventEmitter<boolean>();
 
     @ViewChildren(CalendarWrapperComponent)
     calendarWrappers: QueryList<CalendarWrapperComponent>;
@@ -29,8 +50,15 @@ export class PickerOverlayComponent implements OnInit, AfterViewInit {
         this.options$ = configStoreService.dateRangeOptions$;
     }
 
-    ngOnInit() {
-        this._setValidity();
+    ngOnInit(): void {
+        this.options$.subscribe((options: DateRangeOptions) => {
+            this._fromDateIsRequired = options.startDateIsRequired;
+            this._toDateIsRequired = options.endDateIsRequired;
+            this.__startDatePrefix = options.startDatePrefix;
+            this.__endDatePrefix = options.endDatePrefix;
+            this._presetValues = options.presets;
+            this.cd.markForCheck();
+        });
         this.configStoreService.rangeUpdate$.subscribe((dateRange: DateRange) => {
             if (dateRange) {
                 this._fromDate = dateRange.fromDate;
@@ -38,6 +66,13 @@ export class PickerOverlayComponent implements OnInit, AfterViewInit {
             } else {
                 this._fromDate = undefined;
                 this._toDate = undefined;
+            }
+            this._validateRange();
+        });
+        this.configStoreService.presetUpdate$.subscribe((presetIndex: number | DateRange) => {
+            if (typeof presetIndex === 'number') {
+                this._selectedPreset = presetIndex;
+                this._updateRangeByPreset( presetIndex );
             }
         });
     }
@@ -48,76 +83,109 @@ export class PickerOverlayComponent implements OnInit, AfterViewInit {
         }
     }
 
-    _updateFromDate(date?: D) {
-        this._fromDate = date;
-        if (this._selectedPreset && this._selectedPreset.fromDate !== date) {
+    _updateFromDate(date?: D): void {
+        if ( !this._skipRangeCheck ) {
+            this._fromDate = date;
+            this._isRangePreset();
+        }
+
+        if (this._rangeIsInvalid) {
+            this._validateRange();
+        }
+    }
+
+    _updateToDate(date?: D): void {
+        if ( !this._skipRangeCheck ) {
+            this._toDate = date;
+            this._isRangePreset();
+        }
+
+        if (this._rangeIsInvalid) {
+            this._validateRange();
+        }
+    }
+
+    _updateRangeByPreset(index: number): void {
+        if (this._presetValues && index < this._presetValues.length && index >= 0 ) {
+            // Prevent the system from assigning a preset if one has specifically been selected
+            this._skipRangeCheck = true;
+            this._fromDate = this._presetValues[index].range.fromDate;
+            this._toDate = this._presetValues[index].range.toDate;
+
             setTimeout(() => {
-                this._selectedPreset = null;
-                this.cd.detectChanges();
+                if ( this._fromDate ) {
+                    this.calendarWrappers.first.hcCalendar.activeDate = this._fromDate;
+                }
+                if ( this._toDate ) {
+                    this.calendarWrappers.last.hcCalendar.activeDate = this._toDate;
+                }
+                this._skipRangeCheck = false;
             });
         }
-        this._setValidity();
     }
 
-    _updateToDate(date?: D) {
-        this._toDate = date;
-        if (this._selectedPreset && this._selectedPreset.toDate !== date) {
-            setTimeout(() => {
-                this._selectedPreset = null;
-                this.cd.detectChanges();
-            });
+    _isRangePreset(): void {
+        this._selectedPreset = null;
+        if (this._presetValues) {
+            for (let i = 0; i < this._presetValues.length; i++) {
+                const radioRange: DateRange = this._presetValues[i].range;
+                if (this._fromDate && radioRange.fromDate && this._toDate && radioRange.toDate) {
+                    if ( this._fromDate.toDateString() === radioRange.fromDate.toDateString() &&
+                        this._toDate.toDateString() === radioRange.toDate.toDateString() ) {
+                            this._selectedPreset = i;
+                    }
+                }
+            }
         }
-        this._setValidity();
     }
 
-    _updateRangeByPreset(range: DateRange) {
-        this._fromDate = range.fromDate;
-        this._toDate = range.toDate;
-        this._setValidity();
-    }
-
-    _applyNewDates() {
-        if (!!this._toDate && !!this._fromDate) {
-            this.configStoreService.updateRange({fromDate: this._fromDate, toDate: this._toDate});
+    _applyNewDates(): void {
+        this._validateRange();
+        if (this._rangeIsInvalid) { return; }
+        this.configStoreService.updateRange({fromDate: this._fromDate, toDate: this._toDate});
+        if (this._selectedPreset !== null) {
+            this.configStoreService.updatePreset(this._selectedPreset);
+        } else {
+            this.configStoreService.updatePreset({fromDate: this._fromDate, toDate: this._toDate});
         }
+        this._dismissed.emit( true );
         this.overlayRef.dispose();
     }
 
-    _discardNewDates() {
+    _validateRange(): void {
+        let startLabel = this.__startDatePrefix ?? "Start date";
+        if (startLabel.endsWith(":")) {
+            startLabel = startLabel.slice(0,-1);
+        }
+
+        let endLabel = this.__endDatePrefix ?? "End date";
+        if (endLabel.endsWith(":")) {
+            endLabel = endLabel.slice(0,-1);
+        }
+
+        const bothDatesNull = !this._fromDate && !this._toDate;
+        const isDateRequired = !!this._fromDateIsRequired || !!this._toDateIsRequired
+
+        if (bothDatesNull && isDateRequired) {
+            this._rangeIsInvalid = true;
+            this.__invalidRangeErrorMessage = "You must choose a date.";
+        } else if (!!this._fromDate && !!this._toDate) {
+            this._rangeIsInvalid = this._fromDate > this._toDate;
+            this.__invalidRangeErrorMessage = `${startLabel} cannot be after ${endLabel}.`;
+        } else if (this._fromDateIsRequired && !this._fromDate) {
+            this._rangeIsInvalid = true;
+            this.__invalidRangeErrorMessage = `${startLabel} cannot be blank.`;
+        } else if (this._toDateIsRequired && !this._toDate) {
+            this._rangeIsInvalid = true;
+            this.__invalidRangeErrorMessage = `${endLabel} cannot be blank.`;
+        } else {
+            this._rangeIsInvalid = false;
+            this.__invalidRangeErrorMessage = null;
+        }        
+    }
+
+    _discardNewDates(): void {
+        this._dismissed.emit( false );
         this.overlayRef.dispose();
-    }
-
-    _setValidity() {
-        this._disabled = !this._toDate || !this._fromDate;
-    }
-
-    get _fromMaxDate(): Observable<Date | undefined> {
-        return this.options$.pipe(
-            map(options => {
-                if (!options || !options.fromMinMax || !options.fromMinMax.toDate) {
-                    return this._toDate;
-                }
-                if (!this._toDate) {
-                    return options.fromMinMax.toDate;
-                }
-
-                return options.fromMinMax.toDate > this._toDate ? this._toDate : options.fromMinMax.toDate;
-            })
-        );
-    }
-
-    get _ToMinDate(): Observable<Date | undefined> {
-        return this.options$.pipe(
-            map(options => {
-                if (!options || !options.toMinMax || !options.toMinMax.fromDate) {
-                    return this._fromDate;
-                }
-                if (!this._fromDate) {
-                    return options.toMinMax.fromDate;
-                }
-
-                return options.toMinMax.fromDate < this._fromDate ? this._fromDate : options.toMinMax.fromDate;
-            })
-        );
     }
 }

@@ -1,9 +1,9 @@
-import {Component, Input, ViewEncapsulation} from '@angular/core';
+import {Component, Input, ViewEncapsulation, Output, EventEmitter} from '@angular/core';
 import {parseBooleanAttribute} from '../util';
 
-const supportedColors = ['neutral', 'yellow', 'green', 'red'];
+const supportedColors = ['neutral', 'yellow', 'green', 'red', 'blue'];
 
-export function validateColorInput(inputStr: string) {
+export function validateColorInput(inputStr: string): void {
     if (supportedColors.indexOf(inputStr) < 0) {
         throw Error('Unsupported chip color value: ' + inputStr);
     }
@@ -17,10 +17,15 @@ export function validateColorInput(inputStr: string) {
     encapsulation: ViewEncapsulation.None
 })
 export class ChipComponent {
-    private _action: boolean = false;
-    private _color: string = 'neutral';
+    private _hasCloseButton = false;
+    private _color = 'neutral';
+    _tight = false;
 
-    /** Sets chip color to one of: `neutral`, `yellow`, `green`, or `red` (default=`neutral`) */
+    /** Emitted when the 'X' close button is clicked. `(click)` may be used for clicks on the entire chip */
+    @Output()
+    closeClick = new EventEmitter<MouseEvent>();
+
+    /** Sets chip color to one of: `neutral`, `yellow`, `green`, `red`, or `blue` (default=`neutral`) */
     @Input()
     get color(): string {
         return this._color;
@@ -31,15 +36,32 @@ export class ChipComponent {
         this._color = colorType;
     }
 
-    constructor() {}
-
-    /** If true, displays a delete button and pointer cursor on the chip */
+    /** If true, displays an X button on the right side of the chip which emits a `closeClick` event */
     @Input()
-    get action(): boolean {
-        return this._action;
+    get hasCloseButton(): boolean {
+        return this._hasCloseButton;
     }
 
-    set action(isAction) {
-        this._action = parseBooleanAttribute(isAction);
+    set hasCloseButton(hasButton: boolean) {
+        this._hasCloseButton = parseBooleanAttribute(hasButton);
+    }
+
+    /** If true, removes the margins & padding from the chip; defaults to `false` */
+    @Input()
+    get tight(): boolean {
+        return this._tight;
+    }
+
+    set tight(val: boolean) {
+        this._tight = parseBooleanAttribute(val);
+    }
+
+    /** Allows you to customize the width of a chip (ie. `100%`, `250px`); defaults to `auto` */
+    @Input()
+    width = 'auto';
+
+    /** Called on a click of the X close button */
+    _closeClick(e: MouseEvent): void {
+        this.closeClick.emit(e);
     }
 }

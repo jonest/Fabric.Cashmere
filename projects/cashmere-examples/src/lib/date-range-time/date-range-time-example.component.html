@@ -1,0 +1,18 @@
+<div class="demo-box">
+    <button
+        hc-button
+        hcDateRange
+        title="Time Range"
+        buttonStyle="link"
+        [formControl]="timeControl"
+        [options]="options"
+        #pickerOne
+    >
+        <span class="label">Time range:</span> <span class="value"> {{ timeControl.value.fromDate | date:'h:mm a' }} - {{ timeControl.value.toDate | date:'h:mm a' }} </span>
+        <hc-icon fontSet="fa" fontIcon="fa-chevron-down" class="icon-right" hcIconSm></hc-icon>
+    </button>
+    <p>
+        This example uses <code>FormControl</code> to interface with the component rather than the <code>selectedDate</code> param.
+        It also sets the center value in <code>DateRangeOptions</code>, which centers the component to the screen instead of anchoring to the target.
+    </p>
+</div>

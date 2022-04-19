@@ -1,6 +1,5 @@
 import {
     Component,
-    OnInit,
     ViewEncapsulation,
     ChangeDetectionStrategy,
     AfterContentInit,
@@ -15,7 +14,6 @@ import {
 import {CalendarBodyComponent, HcCalendarCell} from '../calendar-body/calendar-body.component';
 import {Directionality} from '@angular/cdk/bidi';
 import {createMissingDateImplError} from '../datetime/datepicker-errors';
-import {LEFT_ARROW, RIGHT_ARROW, UP_ARROW, DOWN_ARROW, HOME, END, PAGE_UP, PAGE_DOWN, ENTER, SPACE} from '@angular/cdk/keycodes';
 import {D, HC_DATE_FORMATS, HcDateFormats} from '../datetime/date-formats';
 import {DateAdapter} from '../datetime/date-adapter';
 
@@ -130,12 +128,12 @@ export class YearViewComponent implements AfterContentInit {
         this._activeDate = this._dateAdapter.today();
     }
 
-    ngAfterContentInit() {
+    ngAfterContentInit(): void {
         this._init();
     }
 
     /** Handles when a new month is selected. */
-    _monthSelected(month: number) {
+    _monthSelected(month: number): void {
         const normalizedDate = this._dateAdapter.createDate(this._dateAdapter.getYear(this.activeDate), month, 1);
 
         this.monthSelected.emit(normalizedDate);
@@ -160,33 +158,33 @@ export class YearViewComponent implements AfterContentInit {
         const oldActiveDate = this._activeDate;
         const isRtl = this._isRtl();
 
-        switch (event.keyCode) {
-            case LEFT_ARROW:
+        switch (event.key) {
+            case 'ArrowLeft':
                 this.activeDate = this._dateAdapter.addCalendarMonths(this._activeDate, isRtl ? 1 : -1);
                 break;
-            case RIGHT_ARROW:
+            case 'ArrowRight':
                 this.activeDate = this._dateAdapter.addCalendarMonths(this._activeDate, isRtl ? -1 : 1);
                 break;
-            case UP_ARROW:
+            case 'ArrowUp':
                 this.activeDate = this._dateAdapter.addCalendarMonths(this._activeDate, -4);
                 break;
-            case DOWN_ARROW:
+            case 'ArrowDown':
                 this.activeDate = this._dateAdapter.addCalendarMonths(this._activeDate, 4);
                 break;
-            case HOME:
+            case 'Home':
                 this.activeDate = this._dateAdapter.addCalendarMonths(this._activeDate, -this._dateAdapter.getMonth(this._activeDate));
                 break;
-            case END:
+            case 'End':
                 this.activeDate = this._dateAdapter.addCalendarMonths(this._activeDate, 11 - this._dateAdapter.getMonth(this._activeDate));
                 break;
-            case PAGE_UP:
+            case 'PageUp':
                 this.activeDate = this._dateAdapter.addCalendarYears(this._activeDate, event.altKey ? -10 : -1);
                 break;
-            case PAGE_DOWN:
+            case 'PageDown':
                 this.activeDate = this._dateAdapter.addCalendarYears(this._activeDate, event.altKey ? 10 : 1);
                 break;
-            case ENTER:
-            case SPACE:
+            case 'Enter':
+            case ' ':
                 this._monthSelected(this._dateAdapter.getMonth(this._activeDate));
                 break;
             default:
@@ -204,21 +202,23 @@ export class YearViewComponent implements AfterContentInit {
     }
 
     /** Initializes this year view. */
-    _init() {
+    _init(): void {
         this._selectedMonth = this._getMonthInCurrentYear(this.selected);
         this._todayMonth = this._getMonthInCurrentYear(this._dateAdapter.today());
         this._yearLabel = this._dateAdapter.getYearName(this.activeDate);
 
         const monthNames = this._dateAdapter.getMonthNames('short');
         // First row of months only contains 5 elements so we can fit the year label on the same row.
-        this._months = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]].map(row =>
-            row.map(month => this._createCellForMonth(month, monthNames[month]))
-        );
+        this._months = [
+            [0, 1, 2, 3],
+            [4, 5, 6, 7],
+            [8, 9, 10, 11]
+        ].map(row => row.map(month => this._createCellForMonth(month, monthNames[month])));
         this._changeDetectorRef.markForCheck();
     }
 
     /** Focuses the active cell after the microtask queue is empty. */
-    _focusActiveCell() {
+    _focusActiveCell(): void {
         this._hcCalendarBody._focusActiveCell();
     }
 
@@ -304,6 +304,7 @@ export class YearViewComponent implements AfterContentInit {
      * @param obj The object to check.
      * @returns The given object if it is both a date instance and valid, otherwise null.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private _getValidDateOrNull(obj: any): D | null {
         return this._dateAdapter.isDateInstance(obj) && this._dateAdapter.isValid(obj) ? obj : null;
     }

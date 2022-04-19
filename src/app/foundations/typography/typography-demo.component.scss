@@ -1,0 +1,72 @@
+@import 'scss/colors';
+
+.api-table {
+    td, th { padding-right: 30px; }
+    li {
+        margin: 15px 0;
+    }
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+    &.no-margin {
+        margin: 0;
+    }
+}
+
+.demo-content ul {
+    margin: 0;
+}
+.demo-content li {
+    margin: 0;
+}
+
+.demo-content h3 {
+    margin: 30px 0 0;
+}
+
+.ellipsis-example-block {
+    width: 175px;
+    padding: 20px;
+    resize: both;
+    border: 1px solid $slate-gray-300;
+}
+
+#logo {
+    background-color: $charcoal-blue;
+    width: 400px;
+    margin-top: 15px;
+    padding: 10px 40px;
+}
+
+.list-table {
+    border-top: 1px solid $slate-gray-300;
+    border-bottom: 1px solid $slate-gray-300;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.list-table-heading {
+    margin-top: 0px;
+}
+
+.demo-content ul li:first-child,
+.demo-content ol li:first-child {
+    margin-top: 6px;
+}
+
+.h4-subsequent {
+    margin-top: 0px;
+}
+
+.icon-left {
+    margin-right: 10px;
+}
+
+.glyph-chart {
+    width: 700px;
+    margin: 10px 0;
+}

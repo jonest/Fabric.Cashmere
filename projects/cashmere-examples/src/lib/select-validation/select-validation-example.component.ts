@@ -12,9 +12,9 @@ import {FormControl} from '@angular/forms';
 export class SelectValidationExampleComponent {
     private validCheck = false;
 
-    selectControl = new FormControl('active');
+    selectControl = new FormControl('qlik');
 
-    toggleValidate() {
+    toggleValidate(): void {
         this.validCheck = !this.validCheck;
         if (this.validCheck) {
             this.selectControl.setErrors({incorrect: true});

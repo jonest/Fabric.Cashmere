@@ -11,27 +11,22 @@ import {
 } from '@angular/forms';
 import {createMissingDateImplError} from '../datetime/datepicker-errors';
 import {DatepickerComponent} from '../datepicker.component';
-import {coerceBooleanProperty} from '../utils/boolean-property';
+import {parseBooleanAttribute} from '../../util';
 import {Subscription} from 'rxjs';
-import {DOWN_ARROW} from '@angular/cdk/keycodes';
 import {D, HC_DATE_FORMATS, HcDateFormats} from '../datetime/date-formats';
 import {DateAdapter} from '../datetime/date-adapter';
 import {HcFormControlComponent} from '../../form-field/hc-form-control.component';
 import {HcFormFieldComponent} from '../../form-field/hc-form-field.component';
 
-// tslint:disable:use-host-property-decorator
-// tslint:disable:member-ordering
-// tslint:disable:no-use-before-declare
-
 /** @docs-private */
-export const HC_DATEPICKER_VALUE_ACCESSOR: any = {
+export const HC_DATEPICKER_VALUE_ACCESSOR = {
     provide: NG_VALUE_ACCESSOR,
     useExisting: forwardRef(() => DatepickerInputDirective),
     multi: true
 };
 
 /** @docs-private */
-export const HC_DATEPICKER_VALIDATORS: any = {
+export const HC_DATEPICKER_VALIDATORS = {
     provide: NG_VALIDATORS,
     useExisting: forwardRef(() => DatepickerInputDirective),
     multi: true
@@ -114,6 +109,9 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
         this._value = value;
         this._formatValue(value);
 
+        if ( value ) {
+            this._timeDate = value;
+        }
         if (!this._dateAdapter.sameDate(oldDate, value)) {
             this._valueChange.emit(value);
         }
@@ -148,7 +146,7 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
         return !!this._disabled;
     }
     set disabled(value: boolean) {
-        const newValue = coerceBooleanProperty(value);
+        const newValue = parseBooleanAttribute(value);
         const element = this._elementRef.nativeElement;
 
         if (this._disabled !== newValue) {
@@ -174,21 +172,37 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
     @Output()
     readonly dateInput: EventEmitter<HcDatepickerInputEvent> = new EventEmitter<HcDatepickerInputEvent>();
 
+    /** Stores the mode & hourCycle for the inputs of the date range (which don't have a DatePickerComponent) */
+    @Input() _mode: string;
+    @Input() _hourCycle: number;
+
+    /** When true, this allows the date picker to validate with a blank value OR a valid date value. Defaults to false. */
+    @Input() _allowsBlankValues: boolean;
+
     /** Emits when the value changes (either due to user input or programmatic change). */
     _valueChange = new EventEmitter<D | null>();
 
     /** Emits when the disabled state has changed */
     _disabledChange = new EventEmitter<boolean>();
 
-    _onTouched = () => {};
+    _onTouched = (): void => {
+        // do nothing
+    };
 
-    private _cvaOnChange: (value: any) => void = () => {};
+    private _cvaOnChange: (value: unknown) => void = () => {
+        // do nothing
+    };
 
-    private _validatorOnChange = () => {};
+    private _validatorOnChange = () => {
+        // do nothing
+    };
 
     private _datepickerSubscription = Subscription.EMPTY;
 
     private _localeSubscription = Subscription.EMPTY;
+
+    // Stores a placeholder date value to be used for parsing when in time-only mode
+    private _timeDate: Date = new Date();
 
     /** The form control validator for whether the input parses. */
     private _parseValidator: ValidatorFn = (): ValidationErrors | null => {
@@ -245,11 +259,14 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
 
         // Update the displayed date when the locale changes.
         this._localeSubscription = _dateAdapter.localeChanges.subscribe(() => {
+            // eslint-disable-next-line no-self-assign
             this.value = this.value;
         });
+
+        this._allowsBlankValues = false;
     }
 
-    ngOnDestroy() {
+    ngOnDestroy(): void {
         this._datepickerSubscription.unsubscribe();
         this._localeSubscription.unsubscribe();
         this._valueChange.complete();
@@ -285,7 +302,7 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
     }
 
     // Implemented as part of ControlValueAccessor.
-    registerOnChange(fn: (value: any) => void): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this._cvaOnChange = fn;
     }
 
@@ -300,7 +317,7 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
     }
 
     // Set the date programmatically
-    setDate(selected: D) {
+    setDate(selected: D): void {
         this.value = selected;
         this._cvaOnChange(selected);
         this._onTouched();
@@ -308,8 +325,8 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
         this.dateChange.emit(new HcDatepickerInputEvent(this, this._elementRef.nativeElement));
     }
 
-    _onKeydown(event: KeyboardEvent) {
-        const isAltDownArrow = event.altKey && event.keyCode === DOWN_ARROW;
+    _onKeydown(event: KeyboardEvent): void {
+        const isAltDownArrow = event.altKey && event.key === 'ArrowDown';
 
         if (this._datepicker && isAltDownArrow && !this._elementRef.nativeElement.readOnly) {
             this._datepicker.open();
@@ -317,9 +334,37 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
         }
     }
 
-    _onInput(value: string) {
+    _onInput(value: string): void {
+        // Add stored date value to a time-only input for javascript date object parsing
+        const pickerMode = this._datepicker ? this._datepicker.mode : this._mode;
+        if ( pickerMode === 'time' ) {
+            value = this._timeDate.getDate()  + '/' + (this._timeDate.getMonth() + 1) + '/' + this._timeDate.getFullYear() + ' ' + value;
+        }
+
         let date = this._dateAdapter.parse(value, this._dateFormats.parse.dateInput);
-        this._lastValueValid = !date || this._dateAdapter.isValid(date);
+
+        /** Two-digit year input conversion method for IE
+         * Based on the current year, assume that the four-digit year date should be in
+         * either the next 30 years, or the preceding 70 years */
+        if (date) {
+            const inputString: string = this._elementRef.nativeElement.value;
+            /** Skip this check if the input string contains any 3+ digit numerical values - assumed to be a year */
+            if (!inputString.match(/[1-9][0-9][0-9]/g)) {
+                const currentDate = new Date();
+                if (date.getFullYear() >= currentDate.getFullYear() + 30) {
+                    date.setFullYear(date.getFullYear() - 100);
+                } else if (date.getFullYear() < currentDate.getFullYear() - 70) {
+                    date.setFullYear(date.getFullYear() + 100);
+                }
+            }
+        }
+
+        if (this._allowsBlankValues && value.trim() == '') {
+            this._lastValueValid = true;
+        } else {
+            this._lastValueValid = !date || this._dateAdapter.isValid(date);
+        }
+
         date = this._getValidDateOrNull(date);
 
         if (!this._dateAdapter.sameDate(date, this._value)) {
@@ -330,14 +375,14 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
         }
     }
 
-    _onChange() {
+    _onChange(): void {
         this.dateChange.emit(new HcDatepickerInputEvent(this, this._elementRef.nativeElement));
     }
 
     /** Handles blur events on the input. */
-    _onBlur() {
+    _onBlur(): void {
         // Reformat the input only if we have a valid value.
-        if (this.value) {
+        if (this.value || this._elementRef.nativeElement.value) {
             this._formatValue(this.value);
         }
 
@@ -346,13 +391,37 @@ export class DatepickerInputDirective implements ControlValueAccessor, OnDestroy
 
     /** Formats a value and sets it on the input element. */
     private _formatValue(value: D | null) {
-        this._elementRef.nativeElement.value = value ? this._dateAdapter.format(value, this._dateFormats.display.dateInput) : '';
+        let dateFormat = this._dateFormats.display.dateInput;
+        let tempMode = 'date';
+        let tempCycle = 12;
+
+        if (this._datepicker) {
+            tempMode = this._datepicker.mode;
+            tempCycle = +this._datepicker.hourCycle;
+        } else if (this._mode) {
+            tempMode = this._mode;
+            if (this._hourCycle) {
+                tempCycle = this._hourCycle;
+            }
+        }
+
+        if (tempMode === 'time') {
+            const tempFormat = this._dateFormats.display.timeInput;
+            tempFormat['hour12'] = tempCycle === 12;
+            dateFormat = tempFormat;
+        } else if (tempMode === 'date-time') {
+            const tempFormat = this._dateFormats.display.dateTimeInput;
+            tempFormat['hour12'] = tempCycle === 12;
+            dateFormat = tempFormat;
+        }
+        this._elementRef.nativeElement.value = value ? this._dateAdapter.format(value, dateFormat) : '';
     }
 
     /**
      * @param obj The object to check.
      * @returns The given object if it is both a date instance and valid, otherwise null.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private _getValidDateOrNull(obj: any): D | null {
         return this._dateAdapter.isDateInstance(obj) && this._dateAdapter.isValid(obj) ? obj : null;
     }

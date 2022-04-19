@@ -1,135 +1,282 @@
-@import '../sass/colors';
-@import '../sass/variables';
+@import './colors';
+@import './variables';
 
-$popover-bg: $white !default;
-$popover-border-color: $white !default;
-$popover-fallback-border-color: $slate-gray-600 !default;
-$popover-arrow-width: 10px !default;
-$popover-arrow-outer-color: fade_in($popover-border-color, 0.05) !default;
+$popover-arrow-width: 8px;
 
-@mixin hc-popover-container() {
-    display: none;
-    position: absolute;
-    padding: 8px 14px;
+// override index for implementation inside a modal: https://github.com/HealthCatalyst/Fabric.Cashmere/issues/867
+$cdk-z-index-overlay-container: $zindex-cdk-overlay;
+$cdk-z-index-overlay: $zindex-cdk-overlay;
+$cdk-z-index-overlay-backdrop: 1000 !default;
 
-    background-color: $popover-bg;
-    background-clip: padding-box;
-    border: 1px solid $popover-fallback-border-color;
-    border: 1px solid $popover-border-color;
-    border-radius: 6px;
-    box-shadow: 0 2px 10px $gray-400;
-    z-index: $zindex-popover;
+// Background color for all of the backdrops
+$cdk-overlay-dark-backdrop-background: rgba(0, 0, 0, 0.32) !default;
+
+// Default backdrop animation is based on the Material Design swift-ease-out.
+$backdrop-animation-duration: 400ms !default;
+$backdrop-animation-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1) !default;
+
+// Include overlay styles
+.cdk-overlay-container,
+.cdk-global-overlay-wrapper {
+    // Disable events from being captured on the overlay container.
+    pointer-events: none;
+
+    // The container should be the size of the viewport.
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
 }
 
-@mixin hc-popover-container-animation() {
-    animation: fadein 150ms ease-out;
-}
+// The overlay-container is an invisible element which contains all individual overlays.
+.cdk-overlay-container {
+    position: fixed;
+    z-index: $cdk-z-index-overlay-container;
 
-@mixin hc-popover-arrow() {
-    width: 0;
-    height: 0;
-    border-style: solid;
-    position: absolute;
-    margin: $popover-arrow-width;
-}
-
-@mixin hc-popover-placed() {
-    display: block;
-}
-
-@mixin hc-popover-top() {
-    margin-bottom: 5px;
-}
-
-@mixin hc-popover-top-arrow() {
-    border-width: $popover-arrow-width $popover-arrow-width 0 $popover-arrow-width;
-    border-color: $popover-arrow-outer-color transparent transparent transparent;
-    bottom: -$popover-arrow-width;
-    left: calc(50% - $popover-arrow-width);
-    margin-top: 0;
-    margin-bottom: 0;
-}
-
-@mixin hc-popover-bottom() {
-    margin-top: $popover-arrow-width;
-}
-
-@mixin hc-popover-bottom-arrow() {
-    border-width: 0 $popover-arrow-width $popover-arrow-width $popover-arrow-width;
-    border-color: transparent transparent $popover-arrow-outer-color transparent;
-    top: -$popover-arrow-width;
-    left: calc(50% - $popover-arrow-width);
-    margin-top: 0;
-    margin-bottom: 0;
-}
-
-@mixin hc-popover-right() {
-    margin-left: $popover-arrow-width;
-}
-
-@mixin hc-popover-right-arrow() {
-    border-width: $popover-arrow-width $popover-arrow-width $popover-arrow-width 0;
-    border-color: transparent $popover-arrow-outer-color transparent transparent;
-    left: -$popover-arrow-width;
-    top: calc(50% - $popover-arrow-width);
-    margin-left: 0;
-    margin-right: 0;
-}
-
-@mixin hc-popover-left() {
-    margin-right: $popover-arrow-width;
-}
-
-@mixin hc-popover-left-arrow() {
-    border-width: $popover-arrow-width 0 $popover-arrow-width $popover-arrow-width;
-    border-color: transparent transparent transparent $popover-arrow-outer-color;
-    right: -$popover-arrow-width;
-    top: calc(50% - $popover-arrow-width);
-    margin-left: 0;
-    margin-right: 0;
-}
-
-@keyframes fadein {
-    0% {
+    &:empty {
+        // Hide the element when it doesn't have any child nodes. This doesn't
+        // include overlays that have been detached, rather than disposed.
         display: none;
-        opacity: 0;
     }
-    1% {
-        display: block;
-        opacity: 0;
-    }
-    100% {
-        display: block;
+}
+
+// We use an extra wrapper element in order to use make the overlay itself a flex item.
+// This makes centering the overlay easy without running into the subpixel rendering
+// problems tied to using `transform` and without interfering with the other position
+// strategies.
+.cdk-global-overlay-wrapper {
+    display: flex;
+    position: absolute;
+    z-index: $cdk-z-index-overlay;
+}
+
+// A single overlay pane.
+.cdk-overlay-pane {
+    // Note: it's important for this one to start off `absolute`,
+    // in order for us to be able to measure it correctly.
+    position: absolute;
+    pointer-events: auto;
+    box-sizing: border-box;
+    z-index: $cdk-z-index-overlay;
+
+    // For connected-position overlays, we set `display: flex` in
+    // order to force `max-width` and `max-height` to take effect.
+    display: flex;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.cdk-overlay-backdrop {
+    // TODO(jelbourn): reuse sidenav fullscreen mixin.
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    z-index: $cdk-z-index-overlay-backdrop;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity $backdrop-animation-duration $backdrop-animation-timing-function;
+    opacity: 0;
+
+    &.cdk-overlay-backdrop-showing {
         opacity: 1;
+
+        // Note that we can't import and use the `high-contrast` mixin from `_a11y.scss`, because
+        // this file will be copied to the top-level `cdk` package when putting together the files
+        // for npm. Any relative import paths we use here will become invalid once the file is copied.
+        .cdk-high-contrast-active & {
+            // In high contrast mode the rgba background will become solid
+            // so we need to fall back to making it opaque using `opacity`.
+            opacity: 0.6;
+        }
     }
 }
 
-@mixin hc-popover-list() {
-    padding-left: 0;
-    margin: 0;
+.cdk-overlay-dark-backdrop {
+    background: $cdk-overlay-dark-backdrop-background;
 }
 
-@mixin hc-popover-list-item-middle() {
-    border-bottom: 1px solid $slate-gray-200;
+.cdk-overlay-transparent-backdrop {
+    // Note: as of Firefox 57, having the backdrop be `background: none` will prevent it from
+    // capturing the user's mouse scroll events. Since we also can't use something like
+    // `rgba(0, 0, 0, 0)`, we work around the inconsistency by not setting the background at
+    // all and using `opacity` to make the element transparent.
+    &,
+    &.cdk-overlay-backdrop-showing {
+        opacity: 0;
+    }
 }
 
-@mixin hc-popover-list-item() {
-    display: block;
-    padding: 10px 0;
-    min-width: 150px;
-    list-style: none;
+// Overlay parent element used with the connected position strategy. Used to constrain the
+// overlay element's size to fit within the viewport.
+.cdk-overlay-connected-position-bounding-box {
+    position: absolute;
+    z-index: $cdk-z-index-overlay;
+
+    // We use `display: flex` on this element exclusively for centering connected overlays.
+    // When *not* centering, a top/left/bottom/right will be set which overrides the normal
+    // flex layout.
+    display: flex;
+
+    // We use the `column` direction here to avoid some flexbox issues in Edge
+    // when using the "grow after open" options.
+    flex-direction: column;
+
+    // Add some dimensions so the element has an `innerText` which some people depend on in tests.
+    min-width: 1px;
+    min-height: 1px;
 }
 
-@mixin hc-popover-list-button {
-    text-decoration: none;
+// Used when disabling global scrolling.
+.cdk-global-scrollblock {
+    position: fixed;
+
+    // Necessary for the content not to lose its width. Note that we're using 100%, instead of
+    // 100vw, because 100vw includes the width plus the scrollbar, whereas 100% is the width
+    // that the element had before we made it `fixed`.
+    width: 100%;
+
+    // Note: this will always add a scrollbar to whatever element it is on, which can
+    // potentially result in double scrollbars. It shouldn't be an issue, because we won't
+    // block scrolling on a page that doesn't have a scrollbar in the first place.
+    overflow-y: scroll;
+}
+
+@mixin hc-pop-before-above() {
+    transform-origin: right bottom;
+
+    [dir='rtl'] & {
+        transform-origin: left bottom;
+    }
+}
+
+@mixin hc-pop-before-center() {
+    transform-origin: right center;
+
+    [dir='rtl'] & {
+        transform-origin: left center;
+    }
+}
+
+@mixin hc-pop-before-below() {
+    transform-origin: right top;
+
+    [dir='rtl'] & {
+        transform-origin: left top;
+    }
+}
+
+@mixin hc-pop-center-above() {
+    transform-origin: center bottom;
+}
+
+@mixin hc-pop-center-below() {
+    transform-origin: center top;
+}
+
+@mixin hc-pop-after-above() {
+    transform-origin: left bottom;
+
+    [dir='rtl'] & {
+        transform-origin: right bottom;
+    }
+}
+
+@mixin hc-pop-after-center() {
+    transform-origin: left center;
+
+    [dir='rtl'] & {
+        transform-origin: right center;
+    }
+}
+
+@mixin hc-pop-after-below() {
+    transform-origin: left top;
+
+    [dir='rtl'] & {
+        transform-origin: right top;
+    }
+}
+
+@mixin hc-pop-container-basic() {
     background-color: $white;
-    color: $primary-brand;
-    font-family: $default-font-family;
-    padding: 0;
-    min-width: 150px;
-    text-align: left;
-    justify-content: left;
-    border: none;
-    cursor: pointer;
-    font-size: inherit;
+    border: 1px solid $gray-300;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12);
+    color: $offblack;
+    padding: 12px;
+}
+
+// Arrows
+$popover-arrow-width: 10px;
+
+@mixin hc-pop-arrow() {
+    background-color: $white;
+    border-style: solid;
+    border-width: 1px;
+    display: block;
+    height: $popover-arrow-width;
+    position: absolute;
+    transform: rotate(45deg);
+    width: $popover-arrow-width;
+}
+
+@mixin hc-pop-arrow-vert() {
+    margin: $popover-arrow-width - 4px;
+    margin-left: 0;
+    margin-right: 0;
+    position: relative;
+}
+
+@mixin hc-pop-arrow-horiz() {
+    margin: $popover-arrow-width - 4px;
+    margin-top: 0;
+    margin-bottom: 0;
+    position: relative;
+}
+
+@mixin hc-pop-arrow-x-start() {
+    left: 5px;
+}
+
+@mixin hc-pop-arrow-x-center() {
+    left: calc(50% - #{$popover-arrow-width - 4px});
+}
+
+@mixin hc-pop-arrow-x-end() {
+    left: calc(100% - #{$popover-arrow-width * 2 - 5px});
+}
+
+@mixin hc-pop-arrow-y-start() {
+    top: 5px;
+}
+
+@mixin hc-pop-arrow-y-center() {
+    top: calc(50% - #{$popover-arrow-width - 4px});
+}
+
+@mixin hc-pop-arrow-y-end() {
+    top: calc(100% - #{$popover-arrow-width * 2 - 5px});
+}
+
+@mixin hc-pop-arrow-y-above() {
+    border-color: transparent $gray-300 $gray-300 transparent;
+    bottom: -#{$popover-arrow-width - 4px};
+}
+
+@mixin hc-pop-arrow-y-below() {
+    border-color: $gray-300 transparent transparent $gray-300;
+    top: -#{$popover-arrow-width - 4px};
+}
+
+@mixin hc-pop-arrow-x-before() {
+    border-color: $gray-300 $gray-300 transparent transparent;
+    right: -#{$popover-arrow-width - 4px};
+}
+
+@mixin hc-pop-arrow-x-after() {
+    border-color: transparent transparent $gray-300 $gray-300;
+    left: -#{$popover-arrow-width - 4px};
 }

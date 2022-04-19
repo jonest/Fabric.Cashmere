@@ -1,82 +1,86 @@
+import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {StylesComponent} from './styles.component';
-import {ColorDemoComponent} from './color/color-demo.component';
-import {IconGuideComponent} from './icons/icon-guide.component';
-import {TableDemoComponent} from './table/table-demo.component';
-import {TypographyDemoComponent} from './typography/typography-demo.component';
-import {CodeDemoComponent} from './code/code-demo.component';
-import {ChartDemoComponent} from './chart/chart-demo.component';
-import {ErrorPagesComponent} from './error/error-pages.component';
-import {LoginPageComponent} from './login/login-page.component';
 import {AboutModalComponent} from './about/about-modal.component';
-import {NgModule} from '@angular/core';
-import {BreadcrumbsStyleDemoComponent} from './breadcrumbs/breadcrumbs-style-demo.component';
+import {TableDemoComponent} from './table/table-demo.component';
+import {MarkdownContentComponent} from '../shared/markdown-content.component';
+import { IESupportComponent } from './ie-support/ie-support.component';
 
 const routes: Routes = [
     {
-        path: 'styles',
+        path: 'web/styles',
         component: StylesComponent,
         children: [
             {
+                path: 'launch-screen',
+                component: MarkdownContentComponent,
+                data: {
+                    title: 'Launch Screen',
+                    category: 'Screens & Messaging',
+                    document: require('raw-loader!../../../guides/styles/launch-screen.md')
+                }
+            },
+            {
+                path: 'login',
+                component: MarkdownContentComponent,
+                data: {
+                    title: 'Login Screen',
+                    category: 'Screens & Messaging',
+                    document: require('raw-loader!../../../guides/styles/login.md')
+                }
+            },
+            {
+                path: 'logout',
+                component: MarkdownContentComponent,
+                data: {
+                    title: 'Logout Screen',
+                    category: 'Screens & Messaging',
+                    document: require('raw-loader!../../../guides/styles/logout.md')
+                }
+            },
+            {
+                path: 'error',
+                component: MarkdownContentComponent,
+                data: {
+                    title: 'Error Pages',
+                    category: 'Screens & Messaging',
+                    document: require('raw-loader!../../../guides/styles/error.md')
+                }
+            },
+            {
+                path: 'ie-support',
+                component: IESupportComponent,
+                data: {title: 'IE Support Messaging', category: 'Screens & Messaging'}
+            },
+            {
                 path: 'about',
                 component: AboutModalComponent,
-                data: {title: 'About Modal'}
+                data: {title: 'About Modal', category: 'Screens & Messaging'}
             },
             {
                 path: 'breadcrumbs',
-                component: BreadcrumbsStyleDemoComponent,
-                data: {title: 'Breadcrumbs'}
-            },
-            {
-                path: 'color',
-                component: ColorDemoComponent,
-                data: {title: 'Colors'}
-            },
-            {
-                path: 'icons',
-                component: IconGuideComponent,
-                data: {title: 'Icons'}
+                component: MarkdownContentComponent,
+                data: {
+                    title: 'Breadcrumbs',
+                    category: 'User Interface',
+                    document: require('raw-loader!../../../guides/styles/breadcrumbs.md')
+                }
             },
             {
                 path: 'table',
                 component: TableDemoComponent,
-                data: {title: 'Tables'}
-            },
-            {
-                path: 'chart',
-                component: ChartDemoComponent,
-                data: {title: 'Charts'}
-            },
-            {
-                path: 'typography',
-                component: TypographyDemoComponent,
-                data: {title: 'Typography'}
-            },
-            {
-                path: 'code',
-                component: CodeDemoComponent,
-                data: {title: 'Code'}
-            },
-            {
-                path: 'error',
-                component: ErrorPagesComponent,
-                data: {title: 'Error Pages'}
-            },
-            {
-                path: 'login',
-                component: LoginPageComponent,
-                data: {title: 'Login Page'}
+                data: {title: 'Tables', category: 'User Interface'}
             },
             {
                 path: '**',
-                redirectTo: 'color'
+                redirectTo: 'launch-screen'
             }
         ]
     }
 ];
 
 @NgModule({
-    imports: [RouterModule.forChild(routes)],
+    imports: [RouterModule.forRoot(routes, {relativeLinkResolution: 'legacy'})],
     exports: [RouterModule]
 })
 export class StylesRoutesModule {}

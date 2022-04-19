@@ -1,7 +1,7 @@
-/* tslint:disable:component-selector */
+/* eslint-disable @angular-eslint/component-selector */
 // https://github.com/mgechev/codelyzer/issues/178#issuecomment-265154480
 
-import {ChangeDetectionStrategy, Component, ElementRef, HostBinding, HostListener, Renderer2, ViewEncapsulation} from '@angular/core';
+import {ChangeDetectionStrategy, Component, ElementRef, HostBinding, Renderer2, ViewEncapsulation} from '@angular/core';
 import {ButtonComponent} from './button.component';
 
 /* Cashmere button styled anchor */
@@ -23,12 +23,9 @@ export class AnchorComponent extends ButtonComponent {
         return this.disabled ? -1 : 0;
     }
 
-    @HostListener('click', ['$event'])
-    _handleClickEvents(event: Event) {
-        if (this.disabled) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
+    @HostBinding('style.pointer-events')
+    get _handleClickEvents(): string {
+        return this.disabled ? 'none' : 'auto';
     }
 
     constructor(elementRef: ElementRef, renderer: Renderer2) {

@@ -37,12 +37,12 @@ describe('HcTableDataSource', () => {
     let dataSource: HcTableDataSource<PeriodicElement>;
     beforeEach(() => {
         pager = new PaginationComponent();
+        dataSource = new HcTableDataSource([]);
     });
 
     describe('when paged', () => {
         describe('appropriately sets the page after new data is added', () => {
             it('page should be 1', () => {
-                dataSource = new HcTableDataSource([]);
                 dataSource.paginator = pager;
                 dataSource.data = ELEMENT_DATA;
                 expect(dataSource.paginator.pageNumber).toBe(1);
@@ -140,6 +140,53 @@ describe('HcTableDataSource', () => {
                     'Oxygen'
                 ].toString()
             );
+        });
+    });
+
+    describe('filterPredicate()', () => {
+        it('filters through the table by its id', () => {
+            const filter = '1';
+            const result = dataSource.filterPredicate(
+                {id: 1, name: 'Hydrogen', weight: 1.0079, discoveryDate: new Date('January 2 1900')},
+                filter
+            );
+            expect(result).toBe(true);
+        });
+
+        it('filters through the table by its name', () => {
+            const filter = 'Hydrogen';
+            const result = dataSource.filterPredicate(
+                {id: 1, name: 'Hydrogen', weight: 1.0079, discoveryDate: new Date('January 2 1900')},
+                filter
+            );
+            expect(result).toBe(true);
+        });
+
+        it('filters through the table by its weight', () => {
+            const filter = '12.0107';
+            const result = dataSource.filterPredicate(
+                {id: 6, name: 'Carbon', weight: 12.0107, discoveryDate: new Date('January 1 1945')},
+                filter
+            );
+            expect(result).toBe(true);
+        });
+
+        it('filters through the table by its id and name', () => {
+            const filter = '3 Lithium';
+            const result = dataSource.filterPredicate(
+                {id: 3, name: 'Lithium', weight: 6.941, discoveryDate: new Date('January 1 1800')},
+                filter
+            );
+            expect(result).toBe(true);
+        });
+
+        it('filters through the table by its name and weight', () => {
+            const filter = 'Carbon 12.0107';
+            const result = dataSource.filterPredicate(
+                {id: 6, name: 'Carbon', weight: 12.0107, discoveryDate: new Date('January 1 1945')},
+                filter
+            );
+            expect(result).toBe(true);
         });
     });
 });

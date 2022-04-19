@@ -9,12 +9,10 @@
 import {_isNumberValue} from '@angular/cdk/coercion';
 import {DataSource} from '@angular/cdk/table';
 import {BehaviorSubject, combineLatest, merge, Observable, of as observableOf, Subscription} from 'rxjs';
-// import {MatPaginator, PageEvent} from '@angular/material/paginator';
 import {HcSort, Sort} from '../sort/index';
 import {map} from 'rxjs/operators';
-import {PaginationComponent, LoadMorePaginationComponent, PageEvent} from '../pagination/index';
+import {LoadMorePaginationComponent, PageEvent} from '../pagination/index';
 import {BasePaginationComponent} from '../pagination/base-pagination';
-import {isString} from 'util';
 
 /**
  * Corresponds to `Number.MAX_SAFE_INTEGER`. Moved out into a variable here due to
@@ -32,7 +30,7 @@ export function _isLoadMorePaginator(pager: BasePaginationComponent): pager is L
 
 /**
  * Data source that accepts a client-side data array and includes native support of filtering,
- * sorting (using HcSort), and pagination (using MatPaginator).
+ * sorting (using HcSort), and pagination (using BasePaginationComponent).
  *
  * Allows for sort customization by overriding sortingDataAccessor, which defines how data
  * properties are accessed. Also allows for filter customization by overriding filterTermAccessor,
@@ -63,7 +61,7 @@ export class HcTableDataSource<T> extends DataSource<T> {
     filteredData: T[];
 
     /** Array of data that should be rendered by the table, where each object represents one row. */
-    get data() {
+    get data(): T[] {
         return this._data.value;
     }
     set data(data: T[]) {
@@ -123,8 +121,8 @@ export class HcTableDataSource<T> extends DataSource<T> {
      * @param data Data object that is being accessed.
      * @param sortHeaderId The name of the column that represents the data.
      */
-    sortingDataAccessor: ((data: T, sortHeaderId: string) => string | number) = (data: T, sortHeaderId: string): string | number => {
-        const value: any = data[sortHeaderId];
+    sortingDataAccessor: (data: T, sortHeaderId: string) => string | number = (data: T, sortHeaderId: string): string | number => {
+        const value = data[sortHeaderId];
 
         if (_isNumberValue(value)) {
             const numberValue = Number(value);
@@ -135,7 +133,7 @@ export class HcTableDataSource<T> extends DataSource<T> {
         }
 
         // lowercase strings
-        if (isString(value)) {
+        if (typeof value === 'string') {
             return value.toLocaleLowerCase();
         }
 
@@ -169,8 +167,8 @@ export class HcTableDataSource<T> extends DataSource<T> {
         }
 
         return data.sort((a, b) => {
-            let valueA = this.sortingDataAccessor(a, active);
-            let valueB = this.sortingDataAccessor(b, active);
+            const valueA = this.sortingDataAccessor(a, active);
+            const valueB = this.sortingDataAccessor(b, active);
 
             // If both valueA and valueB exist (truthy), then compare the two. Otherwise, check if
             // one value exists while the other doesn't. In this case, existing value should come first.
@@ -206,7 +204,7 @@ export class HcTableDataSource<T> extends DataSource<T> {
      */
     filterPredicate: (data: T, filter: string) => boolean = (data: T, filter: string): boolean => {
         // Transform the data into a lowercase string of all property values.
-        const accumulator = (currentTerm, key) => currentTerm + data[key];
+        const accumulator = (currentTerm, key) => `${currentTerm} ${data[key]}`;
         const dataStr = Object.keys(data)
             .reduce(accumulator, '')
             .toLowerCase();
@@ -228,8 +226,8 @@ export class HcTableDataSource<T> extends DataSource<T> {
      * changes occur, process the current state of the filter, sort, and pagination along with
      * the provided base data and send it to the table for rendering.
      */
-    _updateChangeSubscription() {
-        // Sorting and/or pagination should be watched if HcSort and/or MatPaginator are provided.
+    _updateChangeSubscription(): void {
+        // Sorting and/or pagination should be watched if HcSort and/or BasePaginationComponent are provided.
         // The events should emit whenever the component emits a change or initializes, or if no
         // component is provided, a stream with just a null event should be provided.
         // The `sortChange` and `pageChange` acts as a signal to the combineLatests below so that the
@@ -244,11 +242,14 @@ export class HcTableDataSource<T> extends DataSource<T> {
 
         const dataStream = this._data;
         // Watch for base data or filter changes to provide a filtered set of data.
-        const filteredData = combineLatest(dataStream, this._filter).pipe(map(([data]) => this._filterData(data)));
+        const filteredData = combineLatest([dataStream, this._filter])
+            .pipe(map(([data]) => this._filterData(data)));
         // Watch for filtered data or sort changes to provide an ordered set of data.
-        const orderedData = combineLatest(filteredData, sortChange).pipe(map(([data]) => this._orderData(data)));
+        const orderedData = combineLatest([filteredData, sortChange])
+            .pipe(map(([data]) => this._orderData(data)));
         // Watch for ordered data or page changes to provide a paged set of data.
-        const paginatedData = combineLatest(orderedData, pageChange).pipe(map(([data]) => this._pageData(data)));
+        const paginatedData = combineLatest([orderedData, pageChange])
+            .pipe(map(([data]) => this._pageData(data)));
         // Watched for paged data changes and send the result to the table to render.
         this._renderChangesSubscription.unsubscribe();
         this._renderChangesSubscription = paginatedData.subscribe(data => this._renderData.next(data));
@@ -259,7 +260,7 @@ export class HcTableDataSource<T> extends DataSource<T> {
      * the result of the filterTermAccessor function. If no filter is set, returns the data array
      * as provided.
      */
-    _filterData(data: T[]) {
+    _filterData(data: T[]): T[] {
         // If there is a filter string, filter out data that does not contain it.
         // Each data object is converted to a string using the function defined by filterTermAccessor.
         // May be overridden for customization.
@@ -287,7 +288,7 @@ export class HcTableDataSource<T> extends DataSource<T> {
     }
 
     /**
-     * Returns a paged splice of the provided data array according to the provided MatPaginator's page
+     * Returns a paged splice of the provided data array according to the provided BasePaginationComponent's page
      * index and length. If there is no paginator provided, returns the data array as provided.
      */
     _pageData(data: T[]): T[] {
@@ -305,7 +306,7 @@ export class HcTableDataSource<T> extends DataSource<T> {
      * index does not exceed the paginator's last page. Values are changed in a resolved promise to
      * guard against making property changes within a round of change detection.
      */
-    _updatePaginator(filteredDataLength: number) {
+    _updatePaginator(filteredDataLength: number): void {
         Promise.resolve().then(() => {
             if (!this.paginator) {
                 return;
@@ -325,7 +326,7 @@ export class HcTableDataSource<T> extends DataSource<T> {
      * Used by the HcTable. Called when it connects to the data source.
      * @docs-private
      */
-    connect() {
+    connect(): BehaviorSubject<T[]> {
         return this._renderData;
     }
 
@@ -333,5 +334,5 @@ export class HcTableDataSource<T> extends DataSource<T> {
      * Used by the HcTable. Called when it is destroyed. No-op.
      * @docs-private
      */
-    disconnect() {}
+    disconnect(): void { return; }
 }

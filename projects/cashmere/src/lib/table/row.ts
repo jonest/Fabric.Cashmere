@@ -1,5 +1,3 @@
-/* tslint:disable:directive-class-suffix use-input-property-decorator component-class-suffix use-host-property-decorator */
-
 /**
  * @license
  * Copyright Google LLC All Rights Reserved.

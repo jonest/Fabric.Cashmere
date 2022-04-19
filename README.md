@@ -1,29 +1,26 @@
-[![Build Status](https://travis-ci.org/HealthCatalyst/Fabric.Cashmere.svg?branch=master)](https://travis-ci.org/HealthCatalyst/Fabric.Cashmere)
-[![Coverage Status](https://coveralls.io/repos/github/HealthCatalyst/Fabric.Cashmere/badge.svg?branch=master)](https://coveralls.io/github/HealthCatalyst/Fabric.Cashmere?branch=master)
+[![Build Status](https://dev.azure.com/healthcatalyst/CAP/_apis/build/status/HealthCatalyst.Fabric.Cashmere?branchName=refs%2Fpull%2F1701%2Fmerge)](https://dev.azure.com/healthcatalyst/CAP/_build/latest?definitionId=2105&branchName=refs%2Fpull%2F1701%2Fmerge)
 ![Cashmere Banner](https://raw.githubusercontent.com/HealthCatalyst/Fabric.Cashmere/master/CashmereBanner.png)
 
-An Angular component library that makes any task feel luxurious.
+Cashmere is Health Catalyst’s comprehensive design system. The Cashmere Angular UI library includes components and styles for Health Catalyst branded web applications.
 
 ## Quick Links
 
--   [CHANGELOG](https://github.com/HealthCatalyst/Fabric.Cashmere/blob/master/CHANGELOG.md)
--   [Components](http://cashmere.healthcatalyst.net/components)
--   [Styles](http://cashmere.healthcatalyst.net/styles)
--   [Getting Started](http://cashmere.healthcatalyst.net/guides/getting-started)
--   [Guidelines for Contribution](http://cashmere.healthcatalyst.net/guides/contribution-guide)
--   [Packaging Library](http://cashmere.healthcatalyst.net/guides/packaging-library)
--   [Submit an Issue](http://cashmere.healthcatalyst.net/guides/submit-an-issue)
--   [Supported Browsers](http://cashmere.healthcatalyst.net/guides/supported-browsers)
+-   [Releases](https://github.com/HealthCatalyst/Fabric.Cashmere/releases)
+-   [Components](http://cashmere.healthcatalyst.net/web/components)
+-   [Foundations](http://cashmere.healthcatalyst.net/foundations)
+-   [Content](http://cashmere.healthcatalyst.net/content)
+-   [Getting Started](http://cashmere.healthcatalyst.net/web/guides/getting-started)
+-   [Guidelines for Contribution](http://cashmere.healthcatalyst.net/web/guides/contribution-guide)
+-   [Submit an Issue](http://cashmere.healthcatalyst.net/web/guides/submit-an-issue)
+-   [Supported Browsers](http://cashmere.healthcatalyst.net/web/guides/supported-browsers)
 
 ## Installing to an Existing Project
 
-- Run `npm i --save @healthcatalyst/cashmere`
+-   Refer to the instructions in our [Getting Started](http://cashmere.healthcatalyst.net/web/guides/getting-started) guide.
 
 ## Running the Demo Application
 
-- Clone the repository `git clone https://github.com/HealthCatalyst/Fabric.Cashmere.git`
-- Run `cd Fabric.Cashmere && npm install && npm run build && npx ng serve user-guide`
-- View the demo application at `http://localhost:4200`
+-   To run the Cashmere demo site locally, refer to the instructions in our [Guidelines for Contribution](http://cashmere.healthcatalyst.net/web/guides/contribution-guide) guide to setup your environment.
 
 ## Sponsors
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * @license
  * Copyright Health Catalyst All Rights Reserved.
@@ -10,13 +11,14 @@ import {InjectionToken} from '@angular/core';
 
 export type D = Date;
 
-// tslint:disable-next-line:interface-over-type-literal
 export type HcDateFormats = {
     parse: {
         dateInput: any;
     };
     display: {
         dateInput: any;
+        timeInput: any;
+        dateTimeInput: any;
         monthYearLabel: any;
         dateA11yLabel: any;
         monthYearA11yLabel: any;

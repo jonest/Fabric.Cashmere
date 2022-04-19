@@ -1,6 +1,6 @@
 $default-font-size: 14px !default;
 
-$default-font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif !default;
+$default-font-family: 'Noto Sans', 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif !default;
 
 $grid-breakpoints: (
     xs: 0,
@@ -23,3 +23,5 @@ $zindex-navbar: 970 !default;
 $zindex-popover: 1900 !default;
 $zindex-tooltip: 1910 !default;
 // z-index for cdk overlays is 1000
+$zindex-cdk-overlay: 2100 !default;
+$z-index-ng-select-dropdown: 3000 !default;

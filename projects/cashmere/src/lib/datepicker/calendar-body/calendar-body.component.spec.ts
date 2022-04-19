@@ -1,4 +1,4 @@
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {waitForAsync, ComponentFixture, TestBed} from '@angular/core/testing';
 import {Component} from '@angular/core';
 import {By} from '@angular/platform-browser';
 import {CalendarBodyComponent} from '..';
@@ -21,7 +21,10 @@ import {HcCalendarCellCssClasses, HcCalendarCell} from './calendar-body.componen
 })
 class StandardCalendarBody {
     label = 'Jan 2017';
-    rows = [[1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 12, 13, 14]].map(row => {
+    rows = [
+        [1, 2, 3, 4, 5, 6, 7],
+        [8, 9, 10, 11, 12, 13, 14]
+    ].map(row => {
         return row.map(cell => createCell(cell, cell % 2 === 0 ? 'even' : undefined));
     });
     todayValue = 3;
@@ -38,10 +41,8 @@ function createCell(value: number, cellClasses?: HcCalendarCellCssClasses) {
     return new HcCalendarCell(value, `${value}`, `${value}-label`, true, cellClasses);
 }
 
-// tslint:disable:no-non-null-assertion
-// tslint:disable:component-class-suffix
 describe('CalendarBodyComponent', () => {
-    beforeEach(async(() => {
+    beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [
                 CalendarBodyComponent,
@@ -86,15 +87,15 @@ describe('CalendarBodyComponent', () => {
         });
 
         it('highlights today', () => {
-            const todayCell = calendarBodyNativeElement.querySelector('.hc-calendar-body-today')!;
+            const todayCell = calendarBodyNativeElement.querySelector('.hc-calendar-body-today');
             expect(todayCell).not.toBeNull();
-            expect(todayCell.innerHTML.trim()).toBe('3');
+            expect(todayCell?.innerHTML.trim()).toBe('3');
         });
 
         it('highlights selected', () => {
-            const selectedCell = calendarBodyNativeElement.querySelector('.hc-calendar-body-selected')!;
+            const selectedCell = calendarBodyNativeElement.querySelector('.hc-calendar-body-selected');
             expect(selectedCell).not.toBeNull();
-            expect(selectedCell.innerHTML.trim()).toBe('4');
+            expect(selectedCell?.innerHTML.trim()).toBe('4');
         });
 
         it('should set aria-selected correctly', () => {
@@ -114,7 +115,7 @@ describe('CalendarBodyComponent', () => {
             expect(rowEls.length).toBe(2);
             expect(labelEls.length).toBe(1);
             expect(cellEls.length).toBe(11);
-            expect(rowEls[0].firstElementChild!.classList).toContain('hc-calendar-body-label', 'first cell should be the label');
+            expect(rowEls[0].firstElementChild?.classList).toContain('hc-calendar-body-label', 'first cell should be the label');
             expect(labelEls[0].getAttribute('colspan')).toBe('3');
         });
 

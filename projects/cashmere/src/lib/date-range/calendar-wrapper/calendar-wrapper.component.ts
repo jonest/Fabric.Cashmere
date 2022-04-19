@@ -7,7 +7,9 @@ import {
     Output,
     EventEmitter,
     OnChanges,
-    SimpleChanges
+    SimpleChanges,
+    HostBinding,
+    ChangeDetectorRef
 } from '@angular/core';
 import {ConfigStoreService} from '../services/config-store.service';
 import {CalendarComponent} from '../../datepicker/calendar/calendar.component';
@@ -23,10 +25,13 @@ import {D} from '../../datepicker/datetime/date-formats';
     encapsulation: ViewEncapsulation.None
 })
 export class CalendarWrapperComponent implements OnChanges {
-    @ViewChild(CalendarComponent)
+    @HostBinding('class.hc-calendar-wrapper')
+    _hostClass = true;
+
+    @ViewChild(CalendarComponent, {static: true})
     hcCalendar: CalendarComponent;
 
-    @ViewChild(DatepickerInputDirective)
+    @ViewChild(DatepickerInputDirective, {static: true})
     datePickerInput: DatepickerInputDirective;
 
     /** Emits when selected date has changed. */
@@ -40,10 +45,23 @@ export class CalendarWrapperComponent implements OnChanges {
     @Input()
     dateFormat: string;
 
+    /** Whether the pickers include the calendar, time selector, or both. Defaults to `date`. */
+    @Input()
+    mode: 'date' | 'time' | 'date-time' = 'date';
+
+    /** Whether the time picker should use a 12 or 24 hour clock. Defaults to 12. */
+    @Input()
+    hourCycle = 12;
+
+    /** Whether the field is required to contain a value. Defaults to `true`. */
+    @Input()
+    required = true;
+
     /** Prefix label on top of component. */
     @Input()
     prefixLabel: string;
 
+    /** Flag to filter out weekends. */
     @Input()
     excludeWeekends: boolean;
 
@@ -51,18 +69,19 @@ export class CalendarWrapperComponent implements OnChanges {
     @Input()
     minDate: D | undefined;
 
-    @Input()
-    invalidDateLabel: string;
-
-    /** Flag to filter out weekends. */
+    /** The maximum selectable date. */
     @Input()
     maxDate: D | undefined;
 
-    weekendFilter = () => true;
+    /** Message displayed when a date is invalid. */
+    @Input()
+    invalidDateLabel: string;
 
-    constructor(public configStore: ConfigStoreService) {}
+    weekendFilter = (): boolean => true;
 
-    ngOnChanges(changes: SimpleChanges) {
+    constructor(public configStore: ConfigStoreService, private ref: ChangeDetectorRef) {}
+
+    ngOnChanges(changes: SimpleChanges): void {
         // Necessary to force view refresh
         if (changes.selectedDate) {
             const date: D = changes.selectedDate.currentValue;
@@ -72,23 +91,43 @@ export class CalendarWrapperComponent implements OnChanges {
                 this.selectedDateChange.emit(date);
             }
         }
+
+        // eslint-disable-next-line no-prototype-builtins
+        if (changes.hasOwnProperty('required')) {
+            const isRequired = changes.required.currentValue;
+            this.datePickerInput._allowsBlankValues = !isRequired;
+        }
     }
 
-    _onCalendarChange(date: D) {
+    _onCalendarChange(date: D): void {
         this.selectedDateChange.emit(date);
     }
 
-    _onInputChange(event: HcDatepickerInputEvent) {
-        if (event.value && ((this.minDate && event.value < this.minDate) || (this.maxDate && event.value > this.maxDate))) {
-            this.selectedDate = undefined;
-            this.selectedDateChange.emit(undefined);
+    _onInputChange(event: HcDatepickerInputEvent): void {
+        if (this.mode === 'time') {
+            const tempVal = event.value ? new Date(1900, 1, 1, event.value.getHours(), event.value.getMinutes()) : new Date(1900, 1, 1);
+            const minVal = this.minDate ? new Date(1900, 1, 1, this.minDate.getHours(), this.minDate.getMinutes()) : new Date(1900, 1, 1);
+            const maxVal = this.maxDate ? new Date(1900, 1, 1, this.maxDate.getHours(), this.maxDate.getMinutes()) : new Date(1900, 1, 2);
+
+            if (tempVal < minVal || tempVal > maxVal) {
+                this.selectedDate = undefined;
+                this.selectedDateChange.emit(undefined);
+            } else {
+                this.selectedDateChange.emit(event.value || undefined);
+            }
         } else {
-            this.selectedDateChange.emit(event.value || undefined);
+            if (event.value && ((this.minDate && event.value < this.minDate) || (this.maxDate && event.value > this.maxDate))) {
+                this.selectedDate = undefined;
+                this.selectedDateChange.emit(undefined);
+            } else {
+                this.selectedDateChange.emit(event.value || undefined);
+            }
         }
     }
 
     /** Focus inner input */
-    focusInput() {
+    focusInput(): void {
         this.datePickerInput.focus();
+        this.ref.detectChanges();
     }
 }

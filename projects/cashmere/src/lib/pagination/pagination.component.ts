@@ -1,15 +1,16 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, ViewEncapsulation} from '@angular/core';
 import {coerceNumberProperty} from '@angular/cdk/coercion';
 import {BasePaginationComponent} from './base-pagination';
+import {FormControl} from '@angular/forms';
 
 /** The pagination control enables the user to navigate across paged content.
  * Although commonly used with tables and data grids, this control may be used any place where paged data is used.
- * @inheritdoc
  * */
 @Component({
     selector: 'hc-pagination',
     templateUrl: './pagination.component.html',
-    styleUrls: ['./pagination.component.scss']
+    styleUrls: ['./pagination.component.scss'],
+    encapsulation: ViewEncapsulation.None
 })
 export class PaginationComponent extends BasePaginationComponent implements OnInit {
     /** The set of provided page size options to display to the user. *Defaults to [10, 20, 50].* */
@@ -23,10 +24,16 @@ export class PaginationComponent extends BasePaginationComponent implements OnIn
     }
     private _pageSizeOptions: number[] = [10, 20, 50];
 
-    isFocused: boolean = false;
+    isFocused = false;
+    _pageSizeControl = new FormControl( this.pageSize );
 
     /** Displayed set of page size options. Will be sorted and include current page size. */
     _displayedPageSizeOptions: number[] = [];
+
+    /** Sets the controller to a specific width type - `lg`, `md`, or `sm`. Typically adjusted in a window
+     * resize listener for responsive layouts. *Defaults to lg.* */
+    @Input()
+    displayWidth: 'lg' | 'md' | 'sm' = 'lg';
 
     /** Whether to hide the page size selection UI from the user. *Defaults to false.* */
     @Input()
@@ -38,7 +45,7 @@ export class PaginationComponent extends BasePaginationComponent implements OnIn
     }
     private _hidePageSize = false;
 
-    ngOnInit() {
+    ngOnInit(): void {
         this._updateDisplayedPageSizeOptions();
         super.ngOnInit();
     }
@@ -119,22 +126,24 @@ export class PaginationComponent extends BasePaginationComponent implements OnIn
         }
     }
 
-    _pageSizeUpdated() {
+    _pageSizeUpdated(): void {
         this._updateDisplayedPageSizeOptions();
+        this._pageSizeControl.setValue( this.pageSize );
     }
 
-    _previousPage() {
+    _previousPage(): void {
         if (this._isFirstPage) {
             return;
         }
         this._goToPage((this.pageNumber || 1) - 1);
     }
 
-    _goToPage(pageNum: number) {
+    _goToPage(pageNum: number): number {
         this.pageNumber = pageNum;
+        return this.pageNumber;
     }
 
-    _nextPage() {
+    _nextPage(): void {
         if (this._isLastPage) {
             return;
         }
@@ -149,7 +158,7 @@ export class PaginationComponent extends BasePaginationComponent implements OnIn
      * switching so that the page size is 5 will set the third page as the current page so
      * that the 11th item will still be displayed.
      */
-    _changePageSize(pageSize: number) {
+    _changePageSize(pageSize: number): void {
         // Current page needs to be updated to reflect the new page size. Navigate to the page
         // containing the previous page's first item.
         const startIndex = (this.pageNumber - 1) * this.pageSize + 1;

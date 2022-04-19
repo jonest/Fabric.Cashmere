@@ -1,14 +1,15 @@
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {waitForAsync, ComponentFixture, TestBed} from '@angular/core/testing';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-
 import {ConfigStoreService} from '../services/config-store.service';
 import {NO_ERRORS_SCHEMA} from '@angular/core';
 import {OverlayRef} from '@angular/cdk/overlay';
 import {PickerOverlayComponent} from './picker-overlay.component';
-import {tap} from 'rxjs/operators';
+import {RadioButtonComponent} from '../../radio-button/radio';
 
 class MockOverlayRef {
-    dispose() {}
+    dispose() {
+        // do nothing
+    }
 }
 
 describe('RangeComponent', () => {
@@ -16,9 +17,9 @@ describe('RangeComponent', () => {
     let fixture: ComponentFixture<PickerOverlayComponent>;
     let configStoreService: ConfigStoreService;
 
-    beforeEach(async(() => {
+    beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [PickerOverlayComponent],
+            declarations: [PickerOverlayComponent, RadioButtonComponent],
             imports: [BrowserAnimationsModule],
             providers: [{provide: OverlayRef, useClass: MockOverlayRef}, ConfigStoreService],
             schemas: [NO_ERRORS_SCHEMA]
@@ -26,9 +27,14 @@ describe('RangeComponent', () => {
     }));
 
     beforeEach(() => {
-        configStoreService = TestBed.get(ConfigStoreService);
+        configStoreService = TestBed.inject(ConfigStoreService);
         configStoreService.updateDateRangeOptions({
-            presets: [],
+            presets: [
+                {
+                    presetLabel: 'Test preset',
+                    range: {fromDate: new Date(2010, 1, 1), toDate: new Date(2010, 1, 2)}
+                }
+            ],
             format: 'mediumDate',
             applyLabel: 'Submit'
         });
@@ -41,147 +47,109 @@ describe('RangeComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    describe('fromMaxDate', () => {
-        it('should be undefined if toDate and fromMinMax.toDate are null', async(() => {
-            return component._fromMaxDate
-                .pipe(
-                    tap((fromDate: Date | undefined) => {
-                        expect(fromDate).toBeUndefined();
-                    })
-                )
-                .subscribe();
+    it("should select a preset radio if the current dates match that preset's range", () => {
+        expect(component._selectedPreset).toBeFalsy();
+
+        component._updateFromDate(new Date(2010, 1, 1));
+        component._updateToDate(new Date(2010, 1, 2));
+        fixture.detectChanges();
+
+        expect(component._selectedPreset).toBe(0);
+    });
+
+    describe('_validateRange', () => {
+        it('will mark the range invalid if one or both dates are missing', waitForAsync(() => {
+            component._updateFromDate(new Date(2010, 1, 1));
+            component._updateToDate(undefined);
+            component._validateRange();
+            expect(component._rangeIsInvalid).toBeTruthy();
+            expect(component.__invalidRangeErrorMessage).toBe("End date cannot be blank.");
+
+            component._updateFromDate(undefined);
+            component._updateToDate(new Date(2010, 1, 1));
+            component._validateRange();
+            expect(component._rangeIsInvalid).toBeTruthy();
+            expect(component.__invalidRangeErrorMessage).toBe("Start date cannot be blank.");
+
+            component._updateFromDate(undefined);
+            component._updateToDate(undefined);
+            component._validateRange();
+            expect(component._rangeIsInvalid).toBeTruthy();
+            expect(component.__invalidRangeErrorMessage).toBe("You must choose a date.");
         }));
 
-        it('should be toDate if it is less than fromMinMax.toDate', async(() => {
-            component._toDate = new Date(2010, 1, 1);
-            const toDate = new Date(2010, 2, 1);
-            configStoreService.updateDateRangeOptions({
-                fromMinMax: {
-                    toDate
-                }
+        describe('_fromDateIsRequired == false && _toDateIsRequired == false', () => {
+            beforeEach(() => {
+                component._fromDateIsRequired = false;
+                component._toDateIsRequired = false;
             });
-            return component._fromMaxDate
-                .pipe(
-                    tap((fromDate: Date | undefined) => {
-                        expect(fromDate).toEqual(component._toDate);
-                    })
-                )
-                .subscribe();
-        }));
 
-        it('should be fromMinMax.toDate if it is less than toDate', async(() => {
-            component._toDate = new Date(2010, 2, 1);
-            const toDate = new Date(2010, 1, 1);
-            configStoreService.updateDateRangeOptions({
-                fromMinMax: {
-                    toDate
-                }
+            it('will mark the range valid if both dates are null', waitForAsync(() => {
+                component._validateRange();
+                expect(component._rangeIsInvalid).toBeFalsy();
+                expect(component.__invalidRangeErrorMessage).toBe(null);
+            }));
+        });
+
+        describe('_fromDateIsRequired == false', () => {
+            beforeEach(() => {
+                component._fromDateIsRequired = false;
             });
-            return component._fromMaxDate
-                .pipe(
-                    tap((fromDate: Date | undefined) => {
-                        expect(fromDate).toEqual(toDate);
-                    })
-                )
-                .subscribe();
-        }));
 
-        it('should default toDate when no fromMinMax.toDate is set', async(() => {
-            component._toDate = new Date(2010, 1, 1);
-            return component._fromMaxDate
-                .pipe(
-                    tap((fromDate: Date | undefined) => {
-                        expect(fromDate).toEqual(component._toDate);
-                    })
-                )
-                .subscribe();
-        }));
+            it('will mark range valid if _toDate is not null', waitForAsync(() => {
+                component._updateToDate(new Date(2010, 1, 1));
+                component._validateRange();
+                expect(component._rangeIsInvalid).toBeFalsy();
+                expect(component.__invalidRangeErrorMessage).toBe(null);
+            }));
 
-        it('should be equal to fromMinMax.toDate', async(() => {
-            component._toDate = undefined;
-            const toDate = new Date(2011, 1, 1);
-            configStoreService.updateDateRangeOptions({
-                fromMinMax: {
-                    toDate
-                }
+            it('will mark range invalid if _toDate is null', waitForAsync(() => {
+                component._validateRange();
+                expect(component._rangeIsInvalid).toBeTruthy();
+                expect(component.__invalidRangeErrorMessage).toBe("You must choose a date.");
+            }));
+        });
+
+        describe('_toDateIsRequired == false', () => {
+            beforeEach(() => {
+                component._toDateIsRequired = false;
             });
-            return component._fromMaxDate
-                .pipe(
-                    tap((fromDate: Date | undefined) => {
-                        expect(fromDate).toEqual(toDate);
-                    })
-                )
-                .subscribe();
+
+            it('will mark range valid if _fromDate is not null', waitForAsync(() => {
+                component._updateFromDate(new Date(2010, 1, 1));
+                component._validateRange();
+                expect(component._rangeIsInvalid).toBeFalsy();
+                expect(component.__invalidRangeErrorMessage).toBe(null);
+            }));
+
+            it('will mark range invalid if _fromDate is null', waitForAsync(() => {
+                component._validateRange();
+                expect(component._rangeIsInvalid).toBeTruthy();
+                expect(component.__invalidRangeErrorMessage).toBe("You must choose a date.");
+            }));
+        });
+
+        it('will not mark range invalid if fromDate is before toDate', waitForAsync(() => {
+            component._updateFromDate(new Date(2010, 1, 1));
+            component._updateToDate(new Date(2010, 1, 2));
+            component._validateRange();
+            expect(component._rangeIsInvalid).toBeFalsy();
+        }));
+
+        it('will not mark range invalid if fromDate is equal to toDate', waitForAsync(() => {
+            component._updateFromDate(new Date(2010, 1, 1));
+            component._updateToDate(new Date(2010, 1, 1));
+            component._validateRange();
+            expect(component._rangeIsInvalid).toBeFalsy();
+        }));
+
+        it('will mark range invalid if fromDate is after toDate', waitForAsync(() => {
+            component._updateFromDate(new Date(2010, 1, 2));
+            component._updateToDate(new Date(2010, 1, 1));
+            component._validateRange();
+            expect(component._rangeIsInvalid).toBeTruthy();
+            expect(component.__invalidRangeErrorMessage).toBe("Start date cannot be after End date.");
         }));
     });
 
-    describe('ToMinDate', () => {
-        it('should be undefined if fromDate and toMinMax.fromDate are null', async(() => {
-            return component._ToMinDate
-                .pipe(
-                    tap((toDate: Date | undefined) => {
-                        expect(toDate).toBeUndefined();
-                    })
-                )
-                .subscribe();
-        }));
-
-        it('should be fromDate if it is greater than toMinMax.fromDate', async(() => {
-            component._fromDate = new Date(2010, 2, 1);
-            const fromDate = new Date(2010, 1, 1);
-            configStoreService.updateDateRangeOptions({
-                toMinMax: {
-                    fromDate
-                }
-            });
-            return component._ToMinDate
-                .pipe(
-                    tap((toDate: Date | undefined) => {
-                        expect(toDate).toEqual(component._fromDate);
-                    })
-                )
-                .subscribe();
-        }));
-
-        it('should be toMinMax.fromDate if it is greater than fromDate', async(() => {
-            component._fromDate = new Date(2010, 2, 1);
-            const fromDate = new Date(2010, 1, 1);
-            configStoreService.updateDateRangeOptions({
-                toMinMax: {
-                    fromDate
-                }
-            });
-            return component._ToMinDate
-                .pipe(
-                    tap((toDate: Date | undefined) => {
-                        expect(toDate).toEqual(component._fromDate);
-                    })
-                )
-                .subscribe();
-        }));
-
-        it('should default fromDate when no toMinMax.fromDate is set', async(() => {
-            component._fromDate = new Date(2010, 1, 1);
-            return component._ToMinDate.pipe(
-                tap((toDate: Date | undefined) => {
-                    expect(toDate).toEqual(component._toDate);
-                })
-            );
-        }));
-
-        it('should be equal to toMinMax.fromDate', async(() => {
-            component._toDate = undefined;
-            const fromDate = new Date(2011, 1, 1);
-            configStoreService.updateDateRangeOptions({
-                toMinMax: {
-                    fromDate
-                }
-            });
-            return component._ToMinDate.pipe(
-                tap((toDate: Date | undefined) => {
-                    expect(toDate).toEqual(toDate);
-                })
-            );
-        }));
-    });
 });

@@ -1,0 +1,102 @@
+<div class="demo-content">
+    <h1>Persona Organization Chart</h1>
+    <h6>Last updated Nov 30, 2020</h6>
+
+    <hc-tile>
+        <h5 id="overview">Overview</h5>
+
+        <p>
+            Health Catalyst's customers encompass a broad range of healthcare professionals. We have developed a collection of user personas that represent archetypes of these individuals. These personas help us illustrate the wants, needs, and goals of groups within
+            our customers. Each of our products and services has their own primary and secondary personas, and as an organization it’s important that we understand how they all fit together. The hypothetical organization chart below is one way to visualize
+            that.
+        </p>
+
+        <p>
+            Health Catalyst products and services are design to meet the needs of not only external customers, but also internal team members. As a result, the chart below is divided into sections of external buyers/users and internal users. A complete listing of
+            all our available personas may be found on the <a [queryParams]="{referrer: 'chart'}" routerLink="/content/personas">Persona List</a> page.
+        </p>
+    </hc-tile>
+
+    <hc-tile>
+        <h5 id="organization-chart">Organization Chart</h5>
+
+        <div class="org-container">
+            <img src="./assets/persona_org_chart.png" alt="Persona Org Chart" width="2784" height="580" usemap="#OrgChartMap" />
+        </div>
+    </hc-tile>
+
+    <hc-feedback-form></hc-feedback-form>
+</div>
+
+<map name="OrgChartMap">
+    <!-- Healthcare Organization Personas -->
+    <area id="Healthcare Executive Top" shape="rect" coords="0,73,1840,167" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/healthcare-executive">
+    <area id="Healthcare Executive Left" shape="rect" coords="0,167,145,207" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/healthcare-executive">
+    <area id="Chief Pop Health Officer" shape="rect" coords="144,167,279,207" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/chief-population-health-officer">
+    <area id="Healthcare Executive Middle" shape="rect" coords="279,167,834,207" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/healthcare-executive">
+    <area id="Chief Quality Officer" shape="rect" coords="833,167,946,207" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/chief-quality-officer">
+    <area id="Healthcare Executive Right" shape="rect" coords="945,167,1840,207" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/healthcare-executive">
+    <area id="Healthcare Executive Bottom" shape="rect" coords="0,207,1840,224" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/healthcare-executive">
+
+    <area id="Care Management Director" shape="rect" coords="40,238,239,287" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/care-management-director">
+    <area id="Care Management Admin" shape="rect" coords="40,298,239,347" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/care-management-admin">
+    <area id="Care Coordinator" shape="rect" coords="40,354,239,405" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/care-team-lead">
+
+    <area id="Active Care Mgmt Patient" shape="rect" coords="14,479,160,527" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/active-care-management-patient">
+    <area id="Self-Enrolled Patient" shape="rect" coords="173,479,300,527" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/self-enrolled-patient">
+
+    <area id="Pop Health Data Analyst" shape="rect" coords="169,238,295,287" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/population-health-analyst">
+
+    <area id="Lead Physician" shape="rect" coords="373,238,495,290" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/lead-physician">
+    <area id="Ambulatory Provider" shape="rect" coords="246,316,369,369" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/ambulatory-clinician">
+    <area id="Inpatient Provider" shape="rect" coords="501,316,624,369" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/inpatient-clinician">
+    <area id="Clinical Researcher" shape="rect" coords="510,238,632,288" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/clinical-quality-researcher">
+    <area id="Nursing Lead" shape="rect" coords="373,316,496,369" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/nursing-lead">
+
+    <area id="Ambulatory Nurse" shape="rect" coords="245,391,368,444" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/ambulatory-nurse">
+    <area id="Hospital Nurse" shape="rect" coords="373,391,496,444" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/hospital-nurse">
+    <area id="Hospitalist" shape="rect" coords="501,391,624,444" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/hospitalist">
+
+    <area id="Program Director" shape="rect" coords="658,238,780,400" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/program-director">
+
+    <area id="Patient Safety Clinical Investigator" shape="rect" coords="815,238,962,290" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/patient-safety-clinical-investigator">
+
+    <area id="BI Developer" shape="rect" coords="784,477,908,530" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/bi-developer">
+    <area id="Clinical Data Analyst" shape="rect" coords="656,477,780,530" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/clinical-quality-data-analyst">
+    <area id="Data Steward" shape="rect" coords="528,477,653,530" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/data-steward">
+
+    <area id="EDW Manager" shape="rect" coords="981,238,1112,291" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/edw-manager">
+    <area id="Data Engineer" shape="rect" coords="981,292,1112,345" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/data-engineer">
+    <area id="System Administrator" shape="rect" coords="1115,238,1246,291" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/system-administrator">
+    <area id="Network Administrator" shape="rect" coords="1115,292,1246,345" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/network-administrator">
+
+    <area id="VP of Finance" shape="rect" coords="1353,238,1479,291" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/cost-management-director">
+    <area id="Costing Manager" shape="rect" coords="1269,307,1395,360" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/cost-center-manager">
+    <area id="Cost Analyst" shape="rect" coords="1269,375,1395,428" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/cost-analyst-accountant">
+    <area id="Budgeting Manager" shape="rect" coords="1465,307,1594,360">
+    <area id="Central Finance Analyst" shape="rect" coords="1400,375,1529,428">
+    <area id="Field Finance Analyst" shape="rect" coords="1531,375,1660,428">
+
+    <area id="VP Revenue Cycle" shape="rect" coords="1697,237,1850,290" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/vp-revenue-cycle">
+    <area id="Director Revenue Integrity" shape="rect" coords="1672,308,1800,361" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/vitalware-director-of-revenue-integrity">
+    <area id="Revenue Integrity Analyst" shape="rect" coords="1672,375,1800,428" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/revenue-integrity-analyst">
+    <area id="Director Revenue Cycle" shape="rect" coords="1924,307,2052,360" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/director-revenue-cycle">
+    <area id="CDM User" shape="rect" coords="1804,375,1932,428" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/cdm-workflow-user">
+    <area id="Pharmacy CDM User" shape="rect" coords="1935,375,2063,428" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/pharmacy-cdm-manager">
+    <area id="Biller Auditor" shape="rect" coords="2064,375,2192,428" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/biller-auditor">
+
+    <!-- Health Catalyst Personas -->
+    <area id="Health Catalyst Data Engineer" shape="rect" coords="1873,101,2014,150" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/health-catalyst-data-engineer">
+    <area id="Health Catalyst Technical Director" shape="rect" coords="2016,101,2156,150" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/health-catalyst-technical-director">
+
+    <area id="Health Catalyst Software Engineer" shape="rect" coords="2166,101,2308,150" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/health-catalyst-software-engineer">
+    <area id="Health Catalyst Software Developer" shape="rect" coords="2166,157,2308,206" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/health-catalyst-developer">
+
+    <area id="Analytics Director" shape="rect" coords="2319,101,2457,150" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/health-catalyst-analytics-director">
+    <area id="Analytics Engineer" shape="rect" coords="2319,158,2457,206" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/health-catalyst-analytics-engineer">
+
+    <area id="Health Catalyst Subject Matter Expert" shape="rect" coords="2469,102,2619,151" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/health-catalyst-domain-sme">
+    <area id="Health Catalyst Vitalware User" shape="rect" coords="2469,157,2619,206" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/health-catalyst-vitalware-user">
+
+    <area id="Engagement Lead" shape="rect" coords="2625,102,2775,151" [queryParams]="{referrer: 'chart'}" routerLink="/content/personas/health-catalyst-engagement-lead">
+  </map>

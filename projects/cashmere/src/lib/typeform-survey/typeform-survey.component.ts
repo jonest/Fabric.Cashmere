@@ -1,11 +1,11 @@
-import {Component, Input} from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 
-export function throwErrorForMissingSurveyUri() {
+export function throwErrorForMissingSurveyUri(): Error {
     throw Error(`SurveyUri must be specified on element hc-typeform-survey`);
 }
 
-export class TypeformWindow extends Window {
-    public typeformEmbed: any;
+export class TypeformWindow {
+    public typeformEmbed: unknown;
 }
 
 @Component({
@@ -13,7 +13,7 @@ export class TypeformWindow extends Window {
     template: `
         <a
             class="typeform-share link"
-            [href]="surveyUri"
+            [href]="_fullUri"
             data-mode="drawer_right"
             data-auto-open="true"
             data-submit-close-delay="0"
@@ -21,24 +21,44 @@ export class TypeformWindow extends Window {
             rel="noopener"
         ></a>
     `,
-    styles: []
+    styles: [],
+    encapsulation: ViewEncapsulation.None
 })
 export class TypeformSurveyComponent {
     /**
      * TypeForm survey URI you want to use. Example: https://somecompany.typeform.com/to/surveyId?parameter=parametervalue
      */
-    @Input()
-    public surveyUri: string;
-    private _id: string = 'typef_orm_share';
+    @Input() public set surveyUri(uri: string) {
+        this._surveyUri = uri;
+        this.refreshFullUri();
+    }
+    public get surveyUri(): string {
+        return this._surveyUri;
+    }
+    /**
+     * App version which will be passed to the survey in a hidden field. Ensures you know what version the feedback is referencing.
+     */
+    @Input() public set appVersion(version: string) {
+        this._appVersion = version;
+        this.refreshFullUri();
+    }
+    public get appVersion(): string {
+        return this._appVersion;
+    }
+    public _fullUri: string;
+    private _surveyUri = "";
+    private _appVersion: string;
+    private _id = 'typef_orm_share';
 
     /**
      * Opens the survey specified in the surveyUri
      */
-    public open() {
+    public open(): void {
         if (!document.getElementById(this._id)) {
             this.getScripts();
         } else {
-            (<TypeformWindow>window).typeformEmbed.makePopup(this.surveyUri, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).typeformEmbed.makePopup(this._fullUri, {
                 mode: 'drawer_right',
                 autoOpen: true,
                 opacity: 100,
@@ -46,6 +66,11 @@ export class TypeformSurveyComponent {
                 hideScrollbars: true
             });
         }
+    }
+
+    private refreshFullUri() {
+        const varChar: string = this.surveyUri.includes('?') ? '&' : '?';
+        this._fullUri = this.appVersion ? this.surveyUri + varChar + 'app_version=' + this.appVersion : this.surveyUri;
     }
 
     private getScripts(): void {

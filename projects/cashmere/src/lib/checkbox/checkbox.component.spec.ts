@@ -1,7 +1,4 @@
-/* tslint:disable:no-use-before-declare */
-
 import {ComponentFixture, fakeAsync, TestBed} from '@angular/core/testing';
-
 import {CheckboxChangeEvent, CheckboxComponent} from './checkbox.component';
 import {FormControl, FormsModule, NgModel, ReactiveFormsModule} from '@angular/forms';
 import {Component, DebugElement} from '@angular/core';
@@ -9,7 +6,7 @@ import {CheckboxModule} from './checkbox.module';
 import {By} from '@angular/platform-browser';
 
 describe('CheckboxComponent', () => {
-    let fixture: ComponentFixture<any>;
+    let fixture: ComponentFixture<unknown>;
 
     beforeEach(fakeAsync(() => {
         TestBed.configureTestingModule({
@@ -164,6 +161,11 @@ describe('CheckboxComponent', () => {
 
             expect(inputElement.value).toBe('basic_checkbox');
         });
+
+        it('should align the checkbox label based on the align parameter', () => {
+            const alignClass = fixture.debugElement.queryAll(By.css('.hc-checkbox-align-top'));
+            expect(alignClass.length).toBe(1);
+        });
     });
 
     describe('with form control', () => {
@@ -208,16 +210,16 @@ describe('CheckboxComponent', () => {
             fixture = TestBed.createComponent(CheckboxWithNgModelComponent);
             fixture.detectChanges();
 
-            let checkboxDebugElement = fixture.debugElement.query(By.directive(CheckboxComponent));
-            let checkboxNativeElement = checkboxDebugElement.nativeElement;
+            const checkboxDebugElement = fixture.debugElement.query(By.directive(CheckboxComponent));
+            const checkboxNativeElement = checkboxDebugElement.nativeElement;
             testComponent = fixture.debugElement.componentInstance;
             checkboxInstance = checkboxDebugElement.componentInstance;
             inputElement = <HTMLInputElement>checkboxNativeElement.querySelector('input');
         });
 
         it('should validate with RequiredTrue validator', () => {
-            let checkboxElement = fixture.debugElement.query(By.directive(CheckboxComponent));
-            let ngModel = checkboxElement.injector.get<NgModel>(NgModel);
+            const checkboxElement = fixture.debugElement.query(By.directive(CheckboxComponent));
+            const ngModel = checkboxElement.injector.get<NgModel>(NgModel);
 
             testComponent.isRequired = true;
             inputElement.click();
@@ -244,6 +246,7 @@ describe('CheckboxComponent', () => {
                 [checked]="isChecked"
                 [indeterminate]="isIndeterminate"
                 [disabled]="isDisabled"
+                [align]="alignVal"
                 [value]="checkboxValue"
                 (click)="onCheckboxClick($event)"
                 (change)="onCheckboxChange($event)"
@@ -254,17 +257,22 @@ describe('CheckboxComponent', () => {
     `
 })
 export class SingleCheckboxComponent {
-    isChecked: boolean = false;
-    isRequired: boolean = false;
-    isIndeterminate: boolean = false;
-    isDisabled: boolean = false;
-    parentElementClicked: boolean = false;
-    parentElementKeyedUp: boolean = false;
+    isChecked = false;
+    isRequired = false;
+    isIndeterminate = false;
+    isDisabled = false;
+    parentElementClicked = false;
+    parentElementKeyedUp = false;
     checkboxId: string | null = 'simple-check';
-    checkboxValue: string = 'single_checkbox';
+    checkboxValue = 'single_checkbox';
+    alignVal = "top";
 
-    onCheckboxClick: (event?: Event) => void = () => {};
-    onCheckboxChange: (event?: CheckboxChangeEvent) => void = () => {};
+    onCheckboxClick: (event?: Event) => void = () => {
+        // do nothing
+    };
+    onCheckboxChange: (event?: CheckboxChangeEvent) => void = () => {
+        // do nothing
+    };
 }
 
 @Component({
@@ -282,6 +290,6 @@ class CheckboxWithFormControlComponent {
     `
 })
 class CheckboxWithNgModelComponent {
-    isGood: boolean = false;
-    isRequired: boolean = true;
+    isGood = false;
+    isRequired = true;
 }

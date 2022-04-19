@@ -14,17 +14,18 @@
     "module": "./esm5/cashmere.js",
     "es2015": "./esm2015/cashmere.js",
     "jsnext": "./esm2015/cashmere.js",
+    "dependencies": {
+      "tslib": "^2.0.0"
+    },
     "typings": "./cashmere.d.ts",
     "peerDependencies": {
-        "@angular/cdk": "^6.0.0",
-        "@angular/common": "^6.0.0",
-        "@angular/core": "^6.0.0",
-        "@angular/forms": "^6.0.0",
-        "core-js": ">= 2.4.0 < 3",
-        "font-awesome": "~4.7.0",
-        "npm-font-open-sans": "^1.1.0",
-        "popper.js": ">= 1.12.9 < 2",
-        "rxjs": "^6.0.0",
-        "zone.js": "~0.8.20"
+        "@angular/cdk": "^12.2.13",
+        "@angular/common": ">= 12.2.13",
+        "@angular/core": ">= 12.2.13",
+        "@angular/forms": ">= 12.2.13",
+        "core-js": ">= 2.4.0",
+        "notosans-fontface": "^1.2.4",
+        "rxjs": ">= 6.5.0",
+        "zone.js": ">= 0.11.4"
     }
 }

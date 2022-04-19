@@ -1,79 +1,177 @@
-@import '../sass/colors';
-$pane-header-height: 30px;
+@import '../sass/picklist.scss';
 
 .hc-picklist {
-    height: 100%;
-    min-width: 650px;
-    display: flex;
-    flex-flow: row;
-    justify-content: space-between;
-    align-items: stretch;
-    overflow: hidden;
+    @include hc-picklist();
 
-    .pane {
-        width: 45%;
-        display: flex;
-        flex-direction: column;
-
-        .pane-header {
-            display: flex;
-            justify-content: space-between;
-            flex: 0 0 $pane-header-height;
-
-            .hc-tab-bar-horizontal {
-                flex: 0 0 auto;
-                border-bottom: none;
-                a {
-                    font-size: 13px;
-                }
-            }
-
-            h2 {
-                font-size: 16px;
-                font-weight: bold;
-                margin: 3px 0;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-        }
-
-        hc-picklist-pane {
-            display: block;
-            flex: 1 1 auto;
-            height: calc(100% - #{$pane-header-height});
-        }
-
-        hc-picklist-pane.hide {
-            display: none;
-        }
+    .hc-picklist-pane-container {
+        @include hc-picklist-pane-container();
+    }
+    
+    .hc-picklist-pane-header {
+        @include hc-picklist-pane-header();
     }
 
-    .move-btns {
-        padding-top: 100px;
-        display: flex;
-        flex-flow: column;
-        justify-content: center;
-
-        // prevents a slight jiggle when animating carets on the valueset options
-        transform-style: preserve-3d;
-        transform: translate3d(0, 0, 0);
-
-        .hc-button {
-            min-width: 0;
-            padding: 0;
-            width: 30px;
-            height: 60px;
-            margin-top: 12px;
-
-            .hc-icon {
-                color: $white;
-            }
-            &[disabled],
-            &[disabled]:hover {
-                background-color: $gray-300;
-                border-color: $gray-300;
-            }
-        }
+    .hc-picklist-pane-header-default {
+        @include hc-picklist-pane-header-default();
     }
+
+    .hc-picklist-max-limit-msg {
+        @include hc-picklist-max-limit-msg();
+    }
+
+    .hc-picklist-max-limit-exceeded {
+        @include hc-picklist-max-limit-exceeded();
+    }
+
+    .hc-pick-pane, .hc-pick-pane-list {
+        @include hc-pick-pane-container();
+    }
+
+    .hc-picklist-pane-tools {
+        @include hc-picklist-pane-tools();
+    }
+
+    .hc-pick-button-link-inline {
+        @include hc-pick-button-link-inline();
+    }
+
+    .hc-picklist-move-btns {
+        @include hc-picklist-move-btns();
+    }
+
+    .hc-picklist-move-btn {
+        @include hc-picklist-move-btn();
+    }
+
+    .hc-picklist-arrow {
+        @include hc-picklist-arrow();
+    }
+
+    .hc-picklist-left-arrow {
+        @include hc-picklist-left-arrow();
+    }
+
+    .hc-picklist-right-arrow {
+        @include hc-picklist-right-arrow();
+    }
+}
+
+.hc-pick-pane {
+    @include hc-pick-pane();
+    
+    .hc-pick-search-outer {
+        @include hc-pick-search-outer();
+    }
+
+    .hc-pick-input-search-suffix {
+        @include hc-pick-input-search-suffix();
+    }
+
+    .hc-pick-input-search {
+        @include hc-pick-input-search();
+    }
+
+    .hc-pick-input-search-clear {
+        @include hc-pick-input-search-clear();
+    }
+
+    .hc-form-field-suffix {
+        @include hc-form-field-suffix();
+    }
+
+    .hc-pick-pane-search-no-toolbar {
+        @include hc-pick-pane-search-no-toolbar();
+    }
+}
+
+.hc-pick-pane-list {
+    @include hc-pick-pane-list();
+
+    &.hc-pane-will-accept-drop {
+        @include hc-pane-will-accept-drop();
+    }
+
+    &.pane-is-active .hc-pick-option-marked {
+        @include hc-pane-is-active-option-marked();
+    }
+
+    .hc-pick-pane-list-scroll-host {
+        @include hc-pick-pane-list-scroll-host();
+    }
+    .hc-pick-pane-list-scrollable-content {
+        @include hc-pick-pane-list-scrollable-content();
+    }
+    .hc-pick-pane-list-scrollable-content-virtual {
+        @include hc-pick-pane-list-scrollable-content-virtual();
+    }
+    .hc-pick-pane-list-total-padding {
+        @include hc-pick-pane-list-total-padding();
+    }
+}
+
+.hc-pick-pane-list-items {
+    @include hc-pick-pane-list-items();
+}
+
+.hc-pick-pane-list-footer {
+    @include hc-pick-pane-list-footer();
+}
+
+.hc-pick-option, .hc-pick-optgroup {
+    @include hc-pick-option-row();
+
+    &.hc-pick-option-selected, &.hc-pick-option-selected.hc-pick-option-marked {
+        @include hc-pick-option-selected();
+    }
+    &:not(.hc-pick-option-disabled):hover {
+        @include hc-pick-option-hover();
+    }
+    &.hc-pick-option-selected:hover {
+        @include hc-pick-option-selected-hover();
+    }
+    &.hc-pick-custom-option.hc-pick-option-marked {
+       @include hc-pick-custom-option-marked();
+    }
+    &.hc-pick-option-hide {
+        @include hc-pick-option-hide();
+    }
+}
+
+.hc-pick-group-icon {
+    @include hc-pick-group-icon();
+
+    &.hc-pick-group-icon-open {
+        @include hc-pick-group-icon-open();
+    }
+}
+
+.hc-pick-option-selected .hc-pick-group-icon {
+    @include hc-pick-group-icon-selected();
+
+    &.hc-pick-group-icon-open {
+        @include hc-pick-group-icon-selected-open();
+    }
+}
+
+.hc-pick-optgroup {
+    @include hc-pick-optgroup()
+}
+
+.hc-pick-option {
+    @include hc-pick-option();
+
+    &.hc-pick-option-disabled {
+        @include hc-pick-option-disabled();
+    }
+    &.hc-pick-option-child {
+        @include hc-pick-option-child();
+    }
+
+    .hc-pick-custom-item-label {
+        @include hc-pick-custom-item-label();
+    }
+}
+
+.hc-pick-empty-msg {
+    @include hc-pick-empty-msg();
 }

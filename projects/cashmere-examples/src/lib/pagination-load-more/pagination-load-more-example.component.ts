@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, ViewChild, AfterViewInit} from '@angular/core';
 import {LoadMorePaginationComponent, HcTableDataSource} from '@healthcatalyst/cashmere';
 
 export interface PeriodicElement {
@@ -39,9 +39,9 @@ const ELEMENT_DATA: PeriodicElement[] = [
     templateUrl: 'pagination-load-more-example.component.html',
     styleUrls: ['pagination-load-more-example.component.scss']
 })
-export class PaginationLoadMoreExampleComponent implements OnInit {
+export class PaginationLoadMoreExampleComponent implements AfterViewInit {
     displayedColumns: string[] = ['position', 'name', 'weight', 'symbol'];
-    dataSource: HcTableDataSource<PeriodicElement>;
+    dataSource = new HcTableDataSource(ELEMENT_DATA);
     get length(): number {
         return ELEMENT_DATA.length;
     }
@@ -49,8 +49,7 @@ export class PaginationLoadMoreExampleComponent implements OnInit {
     @ViewChild(LoadMorePaginationComponent)
     loadMoreBtn: LoadMorePaginationComponent;
 
-    ngOnInit(): void {
-        this.dataSource = new HcTableDataSource(ELEMENT_DATA);
+    ngAfterViewInit(): void {
         this.dataSource.paginator = this.loadMoreBtn;
     }
 }

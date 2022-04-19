@@ -8,10 +8,10 @@ import {
     HostBinding,
     NgZone,
     OnDestroy,
-    QueryList,
     Renderer2,
     ViewEncapsulation
 } from '@angular/core';
+import type {QueryList} from '@angular/core';
 import {Drawer, DrawerPromiseResult} from './drawer.component';
 import {debounceTime, filter, startWith, takeUntil} from 'rxjs/operators';
 import {AnimationEvent} from '@angular/animations';
@@ -56,7 +56,7 @@ export class DrawerContainer implements AfterContentInit, DoCheck, OnDestroy {
         this._ngZone.runOutsideAngular(() => this._doCheckSubject.next());
     }
 
-    ngAfterContentInit() {
+    ngAfterContentInit(): void {
         // debounceTime allows the component to render before the margins are calculated
         this._doCheckSubject
             .pipe(
@@ -78,7 +78,7 @@ export class DrawerContainer implements AfterContentInit, DoCheck, OnDestroy {
                     .subscribe(() => {
                         this._calculateContentMargins();
                     });
-                drawer._openChange.pipe(takeUntil(this._drawers.changes)).subscribe(isOpen => {
+                drawer.openedChange.pipe(takeUntil(this._drawers.changes)).subscribe(isOpen => {
                     if (isOpen) {
                         this._setContainerClass(true);
                     } else {
@@ -116,7 +116,6 @@ export class DrawerContainer implements AfterContentInit, DoCheck, OnDestroy {
                 left += this._leftDrawer._width;
             } else if (this._leftDrawer.mode === 'push') {
                 left += this._leftDrawer._width;
-                right -= this._leftDrawer._width;
             }
         }
 
@@ -125,7 +124,6 @@ export class DrawerContainer implements AfterContentInit, DoCheck, OnDestroy {
                 right += this._rightDrawer._width;
             } else if (this._rightDrawer.mode === 'push') {
                 right += this._rightDrawer._width;
-                left -= this._rightDrawer._width;
             }
         }
 
@@ -136,8 +134,8 @@ export class DrawerContainer implements AfterContentInit, DoCheck, OnDestroy {
         }
     }
 
-    private _validateDrawers(): void {
-        for (let drawer of this._drawers.toArray()) {
+    _validateDrawers(): void {
+        for (const drawer of this._drawers.toArray()) {
             if (drawer.align === 'right') {
                 if (this._rightDrawer != null) {
                     throwDrawerContainerError('right');

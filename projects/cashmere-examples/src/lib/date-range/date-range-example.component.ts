@@ -1,23 +1,28 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {DateRangeOptions, PresetItem, DateRange} from '@healthcatalyst/cashmere';
+import {FormControl} from '@angular/forms';
 
 @Component({
     selector: 'hc-date-range-example',
-    templateUrl: './date-range-example.component.html'
+    templateUrl: './date-range-example.component.html',
+    styleUrls: ['date-range-example.component.scss']
 })
 export class DateRangeExampleComponent implements OnInit {
     range: DateRange = {fromDate: new Date(), toDate: new Date()};
+    selected: number | DateRange = this.range;
     options: DateRangeOptions;
+    optionsControlExcludeWeekends = new FormControl(false);
+    optionsControlStartDateRequired = new FormControl(true);
+    optionsControlEndDateRequired = new FormControl(true);
     presets: Array<PresetItem> = [];
-    @ViewChild('pickerOne')
-    pickerOne;
+    presetSelection = 'None';
 
-    ngOnInit() {
+    ngOnInit(): void {
         const today = new Date();
         const fromMin = new Date(today.getFullYear(), today.getMonth() - 2, 1);
-        const fromMax = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const fromMax = new Date(today.getFullYear(), today.getMonth() + 1, 1);
         const toMin = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const toMax = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+        const toMax = new Date(today.getFullYear(), today.getMonth() + 2, 1);
 
         this.setupPresets();
         this.options = {
@@ -25,15 +30,39 @@ export class DateRangeExampleComponent implements OnInit {
             format: 'mediumDate',
             applyLabel: 'Apply',
             fromMinMax: {fromDate: fromMin, toDate: fromMax},
-            toMinMax: {fromDate: toMin, toDate: toMax}
+            toMinMax: {fromDate: toMin, toDate: toMax},
+            startDateIsRequired: true,
+            endDateIsRequired: true
         };
+
+        this.optionsControlExcludeWeekends.valueChanges.subscribe(value => {
+            this.options.excludeWeekends = value;
+        });
+
+        this.optionsControlStartDateRequired.valueChanges.subscribe(value => {
+            this.options.startDateIsRequired = value;
+        });
+
+        this.optionsControlEndDateRequired.valueChanges.subscribe(value => {
+            this.options.endDateIsRequired = value;
+        });
     }
 
-    updateRange(range: DateRange) {
+    updateRange(range: DateRange): void {
         this.range = range;
     }
 
-    setupPresets() {
+    updatePreset(index: number | DateRange): void {
+        if (typeof index === 'number') {
+            this.presetSelection = this.presets[index].presetLabel;
+            this.selected = index;
+        } else {
+            this.presetSelection = 'None';
+            this.selected = this.range;
+        }
+    }
+
+    setupPresets(): void {
         const backDate = numOfDays => {
             const now = new Date();
             return new Date(now.setDate(now.getDate() - numOfDays));
@@ -54,19 +83,23 @@ export class DateRangeExampleComponent implements OnInit {
                 range: {fromDate: yesterday, toDate: today}
             },
             {
-                presetLabel: 'Last 7 Days',
+                presetLabel: 'Last 7 days',
                 range: {fromDate: minus7, toDate: today}
             },
             {
-                presetLabel: 'Last 30 Days',
+                presetLabel: 'Last 30 days',
                 range: {fromDate: minus30, toDate: today}
             },
             {
-                presetLabel: 'This Month',
+                presetLabel: 'This month',
                 range: {fromDate: currMonthStart, toDate: currMonthEnd}
             },
             {
-                presetLabel: 'Last Month',
+                presetLabel: '1 month to end',
+                range: {fromDate: currMonthStart, toDate: currMonthEnd}
+            },
+            {
+                presetLabel: 'Last month',
                 range: {fromDate: lastMonthStart, toDate: lastMonthEnd}
             }
         ];

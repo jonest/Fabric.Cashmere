@@ -1,9 +1,11 @@
-import {Component, Input, ViewChild, ElementRef, OnInit, ViewContainerRef, ComponentFactoryResolver} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {titleCase} from 'change-case';
+import { Component, Input, ViewChild, OnInit, ViewContainerRef, ComponentFactoryResolver } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { titleCase } from 'change-case';
 import stackblitz from '@stackblitz/sdk';
-import {EXAMPLE_COMPONENTS} from '@healthcatalyst/cashmere-examples';
-import {expand} from 'rxjs/operators';
+import { EXAMPLE_COMPONENTS } from '@healthcatalyst/cashmere-examples';
+import { ApplicationInsightsService } from '../../../../shared/application-insights/application-insights.service';
+import { ActivatedRoute } from '@angular/router';
+import { TabSetComponent } from 'projects/cashmere/src/lib/tabs';
 
 @Component({
     selector: 'hc-example-viewer',
@@ -11,18 +13,36 @@ import {expand} from 'rxjs/operators';
     styleUrls: ['example-viewer.component.scss']
 })
 export class ExampleViewerComponent implements OnInit {
-    @ViewChild('exampleContainer', {read: ViewContainerRef})
+    @ViewChild('exampleContainer', { read: ViewContainerRef, static: true })
     exampleContainer: ViewContainerRef;
+    @ViewChild('tabSet') _tabSet: TabSetComponent;
 
     isInitialized = false;
     private _example: string;
     private allExampleFiles: FileHash = {};
-    exampleFiles: Array<{name: string; contents: string}> = [];
+    private appInsights;
+    private selected: string;
+    private section: string;
+    exampleFiles: Array<{ name: string; contents: string }> = [];
 
-    constructor(private httpClient: HttpClient, private componentFactoryResolver: ComponentFactoryResolver) {}
+    constructor(
+        private httpClient: HttpClient,
+        private componentFactoryResolver: ComponentFactoryResolver,
+        private activatedRoute: ActivatedRoute
+    ) {
+        this.appInsights = new ApplicationInsightsService();
+        this.activatedRoute.queryParams.subscribe(params => {
+            if (params['selected']) {
+                this.selected = params['selected'];
+            }
+            if (params['section']) {
+                this.section = params['section'];
+            }
+        });
+    }
 
     @Input()
-    get example() {
+    get example(): string {
         return this._example;
     }
     set example(example: string) {
@@ -32,18 +52,34 @@ export class ExampleViewerComponent implements OnInit {
         }
     }
 
-    get exampleTitle() {
+    get exampleTitle(): string {
         return titleCase(this._example);
     }
 
-    async ngOnInit() {
+    async ngOnInit(): Promise<void> {
         if (this.example) {
             await this.loadExample();
             this.isInitialized = true;
+
+            setTimeout(() => {
+                if (this.selected && this._example === this.section) {
+                    const found = this._tabSet._tabs.toArray().find(t => t.tabTitle === this.selected);
+                    this._tabSet.selectTab(found ? found : 0);
+                    const el = document.getElementById(this.section);
+                    if ( el ) {
+                        el.scrollIntoView();
+                    }
+                } else if (this._example === this.section) {
+                    const el = document.getElementById(this.section);
+                    if ( el ) {
+                        el.scrollIntoView();
+                    }
+                }
+            }, 200);
         }
     }
 
-    getTabTitle(fileName: string) {
+    getTabTitle(fileName: string): string {
         switch (fileName) {
             case 'example.component.ts':
                 return 'TS';
@@ -62,18 +98,22 @@ export class ExampleViewerComponent implements OnInit {
         return fileName;
     }
 
-    async loadExample() {
+    logClick(tab: string): void {
+        this.appInsights.logEvent(this._example, tab);
+    }
+
+    async loadExample(): Promise<void> {
         if (this.exampleContainer.length) {
             this.exampleContainer.clear();
         }
 
         const componentFactory = this.componentFactoryResolver.resolveComponentFactory(EXAMPLE_COMPONENTS[this.example]);
-        this.exampleContainer.createComponent(componentFactory, 0, this.exampleContainer.parentInjector);
+        this.exampleContainer.createComponent(componentFactory, 0, this.exampleContainer.injector);
 
         await this.loadExampleFiles();
     }
 
-    async loadExampleFiles() {
+    async loadExampleFiles(): Promise<void> {
         this.allExampleFiles = await this.httpClient.get<FileHash>(`/assets/docs/examples/${this.example}.json`).toPromise();
         const exampleRoot = `src/app/${this.example}/`;
         this.exampleFiles = Object.keys(this.allExampleFiles)
@@ -85,11 +125,14 @@ export class ExampleViewerComponent implements OnInit {
             .sort((a, b) => b.name.localeCompare(a.name));
     }
 
-    async launchStackBlitz() {
+    async launchStackBlitz(): Promise<void> {
         const exampleFiles = this.allExampleFiles;
         const containerPath = `src/app/example-container.component.ts`;
         exampleFiles[containerPath] = exampleFiles[containerPath].replace(/hc-example/g, `hc-${this.example}-example`);
         const dependencies = JSON.parse(exampleFiles['package.json']).dependencies;
+
+        this.appInsights.logEvent(this._example, 'StackBlitz');
+
         await stackblitz.openProject(
             {
                 files: exampleFiles,
@@ -100,7 +143,7 @@ export class ExampleViewerComponent implements OnInit {
             },
             {
                 openFile: `src/app/${this.example}/${this.example}-example.component.html`,
-                hideDevTools: true
+                hideDevTools: false
             }
         );
     }

@@ -1,4 +1,5 @@
 import {Component} from '@angular/core';
+import {FormControl} from '@angular/forms';
 
 /**
  * @title Banner overview
@@ -10,20 +11,15 @@ import {Component} from '@angular/core';
     styleUrls: ['banner-overview-example.component.scss']
 })
 export class BannerOverviewExampleComponent {
-    private _bannerType: string = 'info';
-    bannerClick: boolean = false;
-    bannerHide: boolean = false;
+    readonly _bannerType = new FormControl('info');
+    readonly bannerClick = new FormControl(false);
+    bannerHide = false;
 
-    hideBanner() {
+    hideBanner(): void {
         this.bannerHide = true;
     }
 
-    get bannerType(): string {
-        return this._bannerType;
-    }
-
-    set bannerType(typeVal: string) {
-        this._bannerType = typeVal;
+    showBanner(): void {
         this.bannerHide = false;
     }
 }

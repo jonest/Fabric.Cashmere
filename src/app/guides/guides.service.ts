@@ -42,16 +42,34 @@ export class GuidesService {
             document: require('raw-loader!../../../guides/supported-browsers.md')
         },
         {
+            title: 'Supported Angular Versions',
+            route: 'supported-angular-versions',
+            category: 'using',
+            document: require('raw-loader!../../../guides/supported-angular-versions.md')
+        },
+        {
+            title: 'Creating New Components',
+            route: 'creating-new-components',
+            category: 'dev',
+            document: require('raw-loader!../../../guides/creating-new-components.md')
+        },
+        {
             title: 'Customizing Components',
             route: 'using-customizing-components',
             category: 'dev',
-            document: require('raw-loader!../../../guides/using-and-customizing-components.md')
+            document: require('raw-loader!../../../guides/using-customizing-components.md')
         },
         {
             title: 'Working with Examples',
             route: 'working-with-examples',
             category: 'dev',
             document: require('raw-loader!../../../guides/working-with-examples.md')
+        },
+        {
+            title: 'Using Cashmere Bits',
+            route: 'using-cashmere-bits',
+            category: 'using',
+            document: require('raw-loader!../../../guides/using-cashmere-bits.md')
         }
     ];
 }

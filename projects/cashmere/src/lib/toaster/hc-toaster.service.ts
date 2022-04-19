@@ -1,10 +1,13 @@
-import {Injectable, ComponentRef, Injector, TemplateRef, ApplicationRef} from '@angular/core';
+import {Injectable, ComponentRef, Injector, TemplateRef, Type} from '@angular/core';
 import {Overlay, OverlayConfig, OverlayRef, PositionStrategy} from '@angular/cdk/overlay';
-import {ComponentPortal, PortalInjector} from '@angular/cdk/portal';
+import {ComponentPortal, PortalInjector, TemplatePortal} from '@angular/cdk/portal';
 import {HcToastComponent} from './hc-toast.component';
 import {HcToastOptions} from './hc-toast-options';
 import {HcToastRef} from './hc-toast-ref';
 import {filter, take} from 'rxjs/operators';
+
+export type ComponentSetup<T> = Partial<T> | ((instance: T) => void);
+export type ToastContentType<T> = Type<T> | TemplateRef<unknown>;
 
 /** Toasts provide users with instant feedback on actions they've taken. For more general information,
  * use a `hc-banner`. */
@@ -13,12 +16,13 @@ export class HcToasterService {
     _toasts: HcToastRef[] = [];
 
     // Inject overlay service
-    constructor(private injector: Injector, private _overlay: Overlay, private _applicationRef: ApplicationRef) {}
+    constructor(private injector: Injector, private _overlay: Overlay) {}
 
     /** Displays a new toaster message with the settings included in `toastOptions`. `toastContent` can be used to
-     * create entirely custom toasts, but only if the type is set to `custom`. Be sure to set `border-radius: 5px`
-     * in the style of your custom content template so it matches the toast container. */
-    addToast(toastOptions?: HcToastOptions, toastContent?: TemplateRef<any>): HcToastRef {
+     * create entirely custom toasts, but only if the type in toastOptions is set to `custom`. Be sure to set `border-radius: 5px`
+     * in the style of your custom content template so it matches the toast container. If your custom toast is
+     * using a component, the `componentSetup` parameter accepts an object or function to configure that component. */
+    addToast<T>(toastOptions?: HcToastOptions, toastContent?: ToastContentType<T>, componentSetup?: ComponentSetup<T>): HcToastRef {
         const defaultOptions: HcToastOptions = {
             type: 'success',
             position: 'bottom-right',
@@ -35,30 +39,36 @@ export class HcToasterService {
 
         const overlayComponent = this._attachToastContainer(_overlayRef, _toastRef);
 
-        _toastRef._componentInstance = overlayComponent;
+        _toastRef.componentInstance = overlayComponent;
 
         if (options.type === 'custom' && toastContent) {
-            _toastRef._componentInstance._toastContent = toastContent;
+            if (toastContent instanceof TemplateRef) {
+                _toastRef.componentInstance._toastPortal = new TemplatePortal(toastContent, _toastRef.componentInstance._viewContainerRef);
+            } else {
+                _toastRef.componentInstance._toastPortal = new ComponentPortal(toastContent);
+                if (componentSetup) {
+                    _toastRef.componentInstance._componentInstance.pipe(filter(c => !!c)).subscribe(c => {
+                        if (componentSetup instanceof Function) {
+                            componentSetup(c);
+                        } else {
+                            Object.keys(componentSetup).forEach(k => (c[k] = componentSetup[k]));
+                        }
+                    });
+                }
+            }
         }
 
         // Listen for click events to close the toast if the option is set
-        if (options.clickDismiss) {
-            _toastRef._componentInstance._canDismiss = options.clickDismiss;
-            _toastRef._componentInstance._closeClick.subscribe(() => {
-                this._removeToastPointer(_toastRef);
-                _toastRef.close();
-                if (options.toastClosed) {
-                    options.toastClosed();
+        if (options.clickDismiss || options.toastClicked) {
+            _toastRef.componentInstance._canClick = true;
+            _toastRef.componentInstance._canDismiss = options.clickDismiss ? options.clickDismiss : false;
+            _toastRef.componentInstance._closeClick.subscribe(() => {
+                if (options.toastClicked) {
+                    options.toastClicked();
                 }
-                _toastRef._componentInstance._animationStateChanged
-                    .pipe(
-                        filter(event => event.phaseName === 'done' && event.toState === 'leave'),
-                        take(1)
-                    )
-                    .subscribe(() => {
-                        this._updateToastPositions();
-                    });
-                _toastRef._componentInstance._closeClick.unsubscribe();
+                if ( _toastRef.componentInstance._canDismiss ) {
+                    _toastRef.close();
+                }
             });
         }
 
@@ -71,7 +81,7 @@ export class HcToasterService {
                 options.type === 'alert' ||
                 options.type === 'custom'
             ) {
-                _toastRef._componentInstance._styleType = options.type;
+                _toastRef.componentInstance._styleType = options.type;
             } else {
                 throw Error('Unsupported toaster type: ' + options.type);
             }
@@ -79,46 +89,65 @@ export class HcToasterService {
 
         // Set the header text
         if (options.header) {
-            _toastRef._componentInstance._headerText = options.header;
+            _toastRef.componentInstance._headerText = options.header;
+        }
+
+        // Set the toast width
+        if (options.width || options.width === 0) {
+            _toastRef.componentInstance._width = options.width;
         }
 
         // Set the body text
         if (options.body) {
-            _toastRef._componentInstance._bodyText = options.body;
+            _toastRef.componentInstance._bodyText = options.body;
+        }
+
+        // Set the custom image if one is defined
+        if (options.image) {
+            _toastRef.componentInstance._customImage = options.image;
         }
 
         // Store the positioning of the toast
         _toastRef._toastPosition = String(options.position);
 
+        // Set progress bar
+        if (options.hasProgressBar) {
+            _toastRef.componentInstance._hasProgressBar = options.hasProgressBar;
+        }
+
         // Set the timeout interval to close the toast if non-zero
         if (options.timeout !== 0) {
             setTimeout(() => {
-                if (_toastRef._componentInstance) {
-                    this._removeToastPointer(_toastRef);
+                if (_toastRef.componentInstance) {
                     _toastRef.close();
-                    if (options.toastClosed) {
-                        options.toastClosed();
-                    }
-                    _toastRef._componentInstance._animationStateChanged
-                        .pipe(
-                            filter(event => event.phaseName === 'done' && event.toState === 'leave'),
-                            take(1)
-                        )
-                        .subscribe(() => {
-                            this._updateToastPositions();
-                        });
                 }
             }, options.timeout);
         }
 
+        // Cleanup functions called when the toast close animation is triggered
+        _toastRef.componentInstance._animationStateChanged
+            .pipe(
+                filter(event => event.phaseName === 'done' && event.toState === 'leave'),
+                take(1)
+            )
+            .subscribe(() => {
+                this._removeToastPointer(_toastRef);
+                if (options.toastClosed) {
+                    options.toastClosed();
+                }
+                this._updateToastPositions();
+                _toastRef.componentInstance._closeClick.unsubscribe();
+            });
+
+        _toastRef.componentInstance._changeRef.detectChanges();
         this._toasts.push(_toastRef);
         return _toastRef;
     }
 
     /** Closes the most recent toast displayed */
-    closeLastToast() {
+    closeLastToast(): void {
         if (this._toasts.length > 0) {
-            const element = this._toasts.pop();
+            const element = this._toasts[this._toasts.length - 1];
             if (element) {
                 element.close();
             }
@@ -126,10 +155,10 @@ export class HcToasterService {
     }
 
     /** Closes currently visible toasts */
-    closeAllToasts() {
-        let len = this._toasts.length;
+    closeAllToasts(): void {
+        const len = this._toasts.length;
         for (let index = 0; index < len; index++) {
-            const element = this._toasts.pop();
+            const element = this._toasts[index];
             if (element) {
                 element.close();
             }
@@ -160,12 +189,12 @@ export class HcToasterService {
 
     private _getOverlayConfig(config: HcToastOptions): OverlayConfig {
         let overlayConfig;
-        let positionStrategy = this._getPositionStrategy(String(config.position), this._toasts.length);
+        const positionStrategy = this._getPositionStrategy(String(config.position), this._toasts.length);
 
         if (config.position === 'top-full-width' || config.position === 'bottom-full-width') {
-            overlayConfig = new OverlayConfig({positionStrategy, width: '96%', panelClass: 'toast-overlay-clicks'});
+            overlayConfig = new OverlayConfig({positionStrategy, width: '96%', panelClass: 'overlay-pointer-events'});
         } else {
-            overlayConfig = new OverlayConfig({positionStrategy, panelClass: 'toast-overlay-clicks'});
+            overlayConfig = new OverlayConfig({positionStrategy, panelClass: 'overlay-pointer-events'});
         }
 
         return overlayConfig;
@@ -173,14 +202,14 @@ export class HcToasterService {
 
     private _getPositionStrategy(position: string, index: number): PositionStrategy {
         let positionStrategy: PositionStrategy;
-        let toastIndex: number = this._getLastToast(position, index);
+        const toastIndex: number = this._getLastToast(position, index);
 
         switch (position) {
             case 'top-right':
                 if (toastIndex !== -1) {
                     positionStrategy = this._overlay
                         .position()
-                        .flexibleConnectedTo(this._toasts[toastIndex]._componentInstance._el.nativeElement.children[0])
+                        .flexibleConnectedTo(this._toasts[toastIndex].componentInstance._el.nativeElement.children[0])
                         .withPositions([
                             {
                                 overlayX: 'end',
@@ -200,7 +229,7 @@ export class HcToasterService {
                 if (toastIndex !== -1) {
                     positionStrategy = this._overlay
                         .position()
-                        .flexibleConnectedTo(this._toasts[toastIndex]._componentInstance._el.nativeElement.children[0])
+                        .flexibleConnectedTo(this._toasts[toastIndex].componentInstance._el.nativeElement.children[0])
                         .withPositions([
                             {
                                 overlayX: 'center',
@@ -220,7 +249,7 @@ export class HcToasterService {
                 if (toastIndex !== -1) {
                     positionStrategy = this._overlay
                         .position()
-                        .flexibleConnectedTo(this._toasts[toastIndex]._componentInstance._el.nativeElement.children[0])
+                        .flexibleConnectedTo(this._toasts[toastIndex].componentInstance._el.nativeElement.children[0])
                         .withPositions([
                             {
                                 overlayX: 'start',
@@ -240,7 +269,7 @@ export class HcToasterService {
                 if (toastIndex !== -1) {
                     positionStrategy = this._overlay
                         .position()
-                        .flexibleConnectedTo(this._toasts[toastIndex]._componentInstance._el.nativeElement.children[0])
+                        .flexibleConnectedTo(this._toasts[toastIndex].componentInstance._el.nativeElement.children[0])
                         .withFlexibleDimensions(false)
                         .withPositions([
                             {
@@ -261,7 +290,7 @@ export class HcToasterService {
                 if (toastIndex !== -1) {
                     positionStrategy = this._overlay
                         .position()
-                        .flexibleConnectedTo(this._toasts[toastIndex]._componentInstance._el.nativeElement.children[0])
+                        .flexibleConnectedTo(this._toasts[toastIndex].componentInstance._el.nativeElement.children[0])
                         .withPositions([
                             {
                                 overlayX: 'end',
@@ -282,7 +311,7 @@ export class HcToasterService {
                 if (toastIndex !== -1) {
                     positionStrategy = this._overlay
                         .position()
-                        .flexibleConnectedTo(this._toasts[toastIndex]._componentInstance._el.nativeElement.children[0])
+                        .flexibleConnectedTo(this._toasts[toastIndex].componentInstance._el.nativeElement.children[0])
                         .withPositions([
                             {
                                 overlayX: 'center',
@@ -303,7 +332,7 @@ export class HcToasterService {
                 if (toastIndex !== -1) {
                     positionStrategy = this._overlay
                         .position()
-                        .flexibleConnectedTo(this._toasts[toastIndex]._componentInstance._el.nativeElement.children[0])
+                        .flexibleConnectedTo(this._toasts[toastIndex].componentInstance._el.nativeElement.children[0])
                         .withPositions([
                             {
                                 overlayX: 'start',
@@ -324,7 +353,7 @@ export class HcToasterService {
                 if (toastIndex !== -1) {
                     positionStrategy = this._overlay
                         .position()
-                        .flexibleConnectedTo(this._toasts[toastIndex]._componentInstance._el.nativeElement.children[0])
+                        .flexibleConnectedTo(this._toasts[toastIndex].componentInstance._el.nativeElement.children[0])
                         .withFlexibleDimensions(false)
                         .withPositions([
                             {
@@ -360,7 +389,7 @@ export class HcToasterService {
 
     // Returns one toast back from the index provided in the position provided
     private _getLastToast(toastPos: string, startIndex: number): number {
-        let toastIndex: number = -1;
+        let toastIndex = -1;
 
         for (let index = startIndex - 1; index >= 0; index--) {
             if (this._toasts[index]._toastPosition === toastPos) {

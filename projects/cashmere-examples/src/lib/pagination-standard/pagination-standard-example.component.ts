@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {Component, ViewChild, AfterViewInit} from '@angular/core';
 import {PaginationComponent, HcTableDataSource} from '@healthcatalyst/cashmere';
 
 export interface PeriodicElement {
@@ -39,9 +39,9 @@ const ELEMENT_DATA: PeriodicElement[] = [
     templateUrl: 'pagination-standard-example.component.html',
     styleUrls: ['pagination-standard-example.component.scss']
 })
-export class PaginationStandardExampleComponent implements OnInit {
+export class PaginationStandardExampleComponent implements AfterViewInit {
     displayedColumns: string[] = ['position', 'name', 'weight', 'symbol'];
-    dataSource: HcTableDataSource<PeriodicElement>;
+    dataSource = new HcTableDataSource(ELEMENT_DATA);
     pageNumber = 1;
     pageOpts = [5, 10, 20];
     get length(): number {
@@ -51,8 +51,7 @@ export class PaginationStandardExampleComponent implements OnInit {
     @ViewChild(PaginationComponent)
     paginator: PaginationComponent;
 
-    ngOnInit(): void {
-        this.dataSource = new HcTableDataSource(ELEMENT_DATA);
+    ngAfterViewInit(): void {
         this.dataSource.paginator = this.paginator;
     }
 }

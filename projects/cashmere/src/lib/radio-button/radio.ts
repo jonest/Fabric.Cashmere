@@ -1,5 +1,6 @@
-/* tslint:disable:no-use-before-declare */
-
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @angular-eslint/directive-selector */
 import {
     AfterContentInit,
     ChangeDetectionStrategy,
@@ -14,10 +15,11 @@ import {
     OnInit,
     Optional,
     Output,
-    QueryList,
     DoCheck,
-    Self
+    Self,
+    ElementRef
 } from '@angular/core';
+import type {QueryList} from '@angular/core';
 import {parseBooleanAttribute} from '../util';
 import {HcFormControlComponent} from '../form-field/hc-form-control.component';
 import {ControlValueAccessor, NgForm, FormGroupDirective, NgControl} from '@angular/forms';
@@ -26,33 +28,35 @@ let nextUniqueId = 0;
 
 /** Groups single radio buttons together into a set for which only one can be selected */
 @Directive({
-    // tslint:disable:directive-selector
     selector: 'hc-radio-group',
     providers: [{provide: HcFormControlComponent, useExisting: forwardRef(() => RadioGroupDirective), multi: true}],
     exportAs: 'hcRadioGroup'
 })
 export class RadioGroupDirective extends HcFormControlComponent implements ControlValueAccessor, AfterContentInit, DoCheck {
     @HostBinding('class.hc-radio-group-vertical')
-    _verticalClass: boolean = true;
+    _verticalClass = true;
     @HostBinding('class.hc-radio-group-horizontal')
-    _horizontalClass: boolean = false;
+    _horizontalClass = false;
 
     /** Event emitted when the value of a radio button changes inside the group. */
     @Output()
     change: EventEmitter<RadioButtonChangeEvent> = new EventEmitter<RadioButtonChangeEvent>();
-    @ContentChildren(forwardRef(() => RadioButtonComponent), {descendants: true})
-    _radios: QueryList<RadioButtonComponent>;
+    /** A list of all the radio buttons included in the group */
+    @ContentChildren(
+        forwardRef(() => RadioButtonComponent),
+        {descendants: true}
+    )
+    radios: QueryList<RadioButtonComponent>;
     private _value: any = null;
-    private _name = `hc-radio-group-${nextUniqueId++}`;
+    private _uniqueName = `hc-radio-group-${nextUniqueId++}`;
+    private _name = this._uniqueName;
     private _inline = false;
+    private _align: 'center' | 'top' | 'bottom' = 'center';
     private _initialized = false; // if value of radio group has been set to initial value
     private _selected: RadioButtonComponent | null = null; // the currently selected radio
     private _form: NgForm | FormGroupDirective | null;
 
     _componentId = this._name;
-
-    _onChangeFn: (value: any) => void = () => {};
-    _onTouchFn: () => any = () => {};
 
     /** Name of radio group. Auto-generated name will be used if no name is set */
     @Input()
@@ -61,7 +65,7 @@ export class RadioGroupDirective extends HcFormControlComponent implements Contr
     }
 
     set name(value: string) {
-        this._name = value;
+        this._name = value ? value : this._uniqueName;
         this._updateRadioButtonNames();
     }
 
@@ -98,7 +102,7 @@ export class RadioGroupDirective extends HcFormControlComponent implements Contr
         return this._isDisabled;
     }
 
-    set disabled(value) {
+    set disabled(value: boolean) {
         this._isDisabled = parseBooleanAttribute(value);
         this._markRadiosForCheck();
     }
@@ -109,7 +113,7 @@ export class RadioGroupDirective extends HcFormControlComponent implements Contr
         return this._isRequired;
     }
 
-    set required(value) {
+    set required(value: boolean) {
         this._isRequired = parseBooleanAttribute(value);
         this._markRadiosForCheck();
     }
@@ -131,10 +135,29 @@ export class RadioGroupDirective extends HcFormControlComponent implements Contr
         return this._inline;
     }
 
-    set inline(value) {
+    set inline(value: boolean) {
         this._inline = parseBooleanAttribute(value);
         this._verticalClass = !this._inline;
         this._horizontalClass = this._inline;
+    }
+
+    /** If true, condense the default margin and reduce the font size on all contained radios. *Defaults to `false`.*  */
+    @Input()
+    get tight(): boolean {
+        return this._tight;
+    }
+    set tight(value : boolean) {
+        this._tight = parseBooleanAttribute(value);
+    }
+
+    /** Sets the position all radios in the group relative to their associated label. *Defaults to `center`.*  */
+    @Input()
+    get align(): 'center' | 'top' | 'bottom' {
+        return this._align;
+    }
+    set align( value: 'center' | 'top' | 'bottom' ) {
+        this._align = value;
+        this._markRadiosForCheck();
     }
 
     constructor(
@@ -153,26 +176,28 @@ export class RadioGroupDirective extends HcFormControlComponent implements Contr
         }
     }
 
-    ngAfterContentInit() {
+    ngAfterContentInit(): void {
         this._initialized = true;
+        setTimeout(() => this._markRadiosForCheck());
     }
 
-    writeValue(value: any) {
+    writeValue(value: any): void {
         this.value = value;
         this._cdRef.markForCheck();
     }
 
-    registerOnChange(fn: any) {
-        this._onChangeFn = fn;
+    public onChange: (value: unknown) => void = () => undefined;
+    public onTouch: () => unknown = () => undefined;
+    public registerOnChange(fn: (value: unknown) => void): void {
+        this.onChange = fn;
+    }
+    public registerOnTouched(fn: () => unknown): void {
+        this.onTouch = fn;
     }
 
-    registerOnTouched(fn: any) {
-        this._onTouchFn = fn;
-    }
-
-    _touch() {
-        if (this._onTouchFn) {
-            this._onTouchFn();
+    _touch(): void {
+        if (this.onTouch) {
+            this.onTouch();
         }
     }
 
@@ -183,16 +208,16 @@ export class RadioGroupDirective extends HcFormControlComponent implements Contr
     }
 
     private _markRadiosForCheck() {
-        if (this._radios) {
-            this._radios.forEach(radio => radio._markForCheck());
+        if (this.radios) {
+            this.radios.forEach(radio => radio._markForCheck());
         }
     }
 
     private _updateSelectedRadio() {
-        let isAlreadySelected = this._selected !== null && this._selected.value === this._value;
-        if (this._radios && !isAlreadySelected) {
+        const isAlreadySelected = this._selected !== null && this._selected.value === this._value;
+        if (this.radios && !isAlreadySelected) {
             this._selected = null;
-            this._radios.forEach(radio => {
+            this.radios.forEach(radio => {
                 radio.checked = this.value === radio.value;
                 if (radio.checked) {
                     this._selected = radio;
@@ -208,8 +233,8 @@ export class RadioGroupDirective extends HcFormControlComponent implements Contr
     }
 
     private _updateRadioButtonNames(): void {
-        if (this._radios) {
-            this._radios.forEach(radio => {
+        if (this.radios) {
+            this.radios.forEach(radio => {
                 radio.name = this.name;
             });
         }
@@ -265,10 +290,12 @@ export class RadioButtonComponent implements OnInit {
     /** Event emitted when the value of the radio button changes */
     @Output()
     change = new EventEmitter<RadioButtonChangeEvent>();
-    private _checked: boolean = false;
+    private _checked = false;
     private _value: any = null;
-    private _required: boolean = false;
-    private _disabled: boolean = false;
+    private _required = false;
+    private _disabled = false;
+    private _tight = false;
+    private _align: 'center' | 'top' | 'bottom' = 'center';
     private readonly radioGroup: RadioGroupDirective | null;
 
     /** Value of radio buttons */
@@ -290,7 +317,7 @@ export class RadioButtonComponent implements OnInit {
 
     @HostBinding('attr.id')
     get _getHostId(): string {
-        return this._uniqueId;
+        return this.id;
     }
 
     /** Boolean value of whether the radio button is required */
@@ -299,7 +326,7 @@ export class RadioButtonComponent implements OnInit {
         return this._required || (this.radioGroup != null && this.radioGroup.required);
     }
 
-    set required(required) {
+    set required(required : boolean) {
         this._required = parseBooleanAttribute(required);
     }
 
@@ -309,7 +336,7 @@ export class RadioButtonComponent implements OnInit {
         return this._disabled || (this.radioGroup != null && this.radioGroup.disabled);
     }
 
-    set disabled(isDisabled) {
+    set disabled(isDisabled: boolean) {
         this._disabled = parseBooleanAttribute(isDisabled);
     }
 
@@ -320,7 +347,7 @@ export class RadioButtonComponent implements OnInit {
     }
 
     set checked(value: boolean) {
-        let newCheckedState = parseBooleanAttribute(value);
+        const newCheckedState = parseBooleanAttribute(value);
         if (this._checked !== newCheckedState) {
             this._checked = newCheckedState;
             if (newCheckedState && this.radioGroup && this.radioGroup.value !== this.value) {
@@ -332,38 +359,75 @@ export class RadioButtonComponent implements OnInit {
         }
     }
 
-    get _inputId() {
-        if (this.id) {
-            return this.id;
+    get _inlineGroup(): boolean {
+        if (this.radioGroup !== null) {
+            return this.radioGroup.inline;
+        } else {
+            return false;
         }
-        return `${this._uniqueId}-input`;
     }
 
-    constructor(@Optional() radioGroup: RadioGroupDirective, private cdRef: ChangeDetectorRef) {
+    /** If true, condense the default margin, reduce the font size, and decrease the circle size.
+     * Inherits value from parent radio group if part of one. *Defaults to `false`.*  */
+    @Input()
+    get tight(): boolean {
+        if (this.radioGroup !== null) {
+            return this.radioGroup.tight;
+        } else {
+            return this._tight;
+        }
+    }
+    set tight(value: boolean) {
+        this._tight = parseBooleanAttribute(value);
+    }
+
+    /** Sets the position of the radio button relative to its associated label (if not already set in the group). *Defaults to `center`.*  */
+    @Input()
+    get align(): 'center' | 'top' | 'bottom' {
+        if (this.radioGroup !== null) {
+            return this.radioGroup.align;
+        } else {
+            return this._align;
+        }
+    };
+    set align( value: 'center' | 'top' | 'bottom' ) {
+        this._align = value;
+    }
+
+    get _overlayClass(): string {
+        const tightClass = this.tight ? '-tight' : '';
+        return 'hc-radio-overlay hc-radio-align-' + this.align + tightClass;
+    }
+
+    get _inputId(): string {
+        return `${this.id || this._uniqueId}-input`;
+    }
+
+    constructor(@Optional() radioGroup: RadioGroupDirective, private cdRef: ChangeDetectorRef, public _elementRef: ElementRef) {
         this.radioGroup = radioGroup;
     }
 
-    ngOnInit() {
+    ngOnInit(): void {
         if (this.radioGroup !== null) {
             this.checked = this.radioGroup.value === this._value;
             this.name = this.radioGroup.name;
         }
     }
 
-    _onInputClick(event: Event) {
+    _onInputClick(event: Event): void {
         event.stopPropagation();
     }
 
-    _onInputChange(event: Event) {
+    _onInputChange(event: Event): void {
         event.stopPropagation();
         const valueChanged = this.radioGroup && this.value !== this.radioGroup.value;
         this._emitChangeEvent();
         if (this.radioGroup !== null) {
-            this.radioGroup._onChangeFn(this.value);
+            this.radioGroup.onChange(this.value);
             this.radioGroup._touch();
             if (valueChanged) {
-                this.radioGroup._emitChangeEvent();
                 this.radioGroup.value = this.value;
+                this.radioGroup._emitChangeEvent();
             }
         } else {
             this.checked = true;
@@ -374,7 +438,7 @@ export class RadioButtonComponent implements OnInit {
         this.change.emit(new RadioButtonChangeEvent(this, this.value));
     }
 
-    _markForCheck() {
+    _markForCheck(): void {
         this.cdRef.markForCheck();
     }
 }

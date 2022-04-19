@@ -12,16 +12,24 @@ import {
     TemplateRef,
     Type
 } from '@angular/core';
-import {ModalOptions, ModalSize} from './modal-options';
+import {ModalOptions} from './modal-options';
 import {ActiveModal} from './active-modal';
 
-export type ModalContentType = Type<{}> | TemplateRef<any>;
+export type ModalContentType = Type<unknown> | TemplateRef<unknown>;
 
 @Injectable()
 export class ModalService {
+    /** Defaults to false. Restricts multiple modals from being opened on top of each other
+     * (an error will be thrown if attempted). It's generally considered bad practice to open multiple
+     * models at once, so only change this with good reason.
+     */
+    allowMultiple = false;
+
     // start at 2000 (reserved range for modals, see _variables.scss)
-    private _zIndexCounter = 2000;
+    private _zIndexBase = 2000;
+    private _zIndexCounter = this._zIndexBase;
     private _renderer: Renderer2;
+    private _modalsOpen = 0;
 
     constructor(
         private _componentFactory: ComponentFactoryResolver,
@@ -36,6 +44,11 @@ export class ModalService {
      * In order to use a component, it must be specified in your module's EntryComponents.
      */
     open<T>(modalContent: ModalContentType, modalOptions?: ModalOptions): HcModal<T> {
+        if (!this.allowMultiple && this._modalsOpen !== 0) {
+            throw new Error(`Multiple modals may not be opened at the same time
+                when the allowMultiple property on ModalService is set to false.`);
+        }
+
         let container = document.querySelector('body') as HTMLElement;
 
         const defaultOptions = {
@@ -43,7 +56,12 @@ export class ModalService {
             data: {},
             ignoreEscapeKey: false,
             size: 'auto',
-            ignoreOverlayClick: false
+            ignoreOverlayClick: false,
+            isDraggable: false,
+            isResizable: false,
+            disableFullScreen: false,
+            restoreFocus: true,
+            autoFocus: false
         };
         const options = {...defaultOptions, ...modalOptions};
         if (options.container) {
@@ -55,8 +73,8 @@ export class ModalService {
         }
 
         // TODO: HcModal and ActiveModal essentially are the same object with HcModal having refs. Might as well merge them to simplify
-        let modal = new HcModal<T>();
-        let activeModalRef = new ActiveModal();
+        const modal = new HcModal<T>();
+        const activeModalRef = new ActiveModal();
         modal.data = options.data;
         activeModalRef.data = options.data;
 
@@ -69,8 +87,13 @@ export class ModalService {
         this._renderer.addClass(container, 'hc-modal-open');
         modal._removeOpenClass = () => this._renderer.removeClass(container, 'hc-modal-open');
 
+        // if multiple modals are allowed, make sure the newest is always on top
+        if ( this.allowMultiple ) {
+            this._zIndexCounter = this._zIndexBase + (this._modalsOpen * 2);
+        }
+
         // Create, attach, and append overlay to container
-        let overlay = this._componentFactory.resolveComponentFactory(ModalOverlayComponent).create(modalInjector);
+        const overlay = this._componentFactory.resolveComponentFactory(ModalOverlayComponent).create(modalInjector);
         this._renderer.setStyle(overlay.location.nativeElement, 'z-index', this._zIndexCounter);
         overlay.instance._ignoreEscapeKey = options.ignoreEscapeKey;
 
@@ -97,22 +120,57 @@ export class ModalService {
 
         // Create, attach, and append Window to container
         // Apply options
-        let window = this._componentFactory.resolveComponentFactory(ModalWindowComponent).create(modalInjector, projectableNodes);
+        const window = this._componentFactory.resolveComponentFactory(ModalWindowComponent).create(modalInjector, projectableNodes);
         this._renderer.setStyle(window.location.nativeElement, 'z-index', this._zIndexCounter + 1);
-        window.instance._size = options.size as ModalSize;
         window.instance._ignoreOverlayClick = options.ignoreOverlayClick;
+        window.instance._isDraggable = options.isDraggable;
+        window.instance._disableFullScreen = options.disableFullScreen;
+        window.instance._autoFocus = options.autoFocus;
+        window.instance._restoreFocus = options.restoreFocus;
+
+        // Gives the child hc-modal component a new class of 'hc-modal-resizable' when the isResizable property is set to true
+        const hcmodal = (window.location.nativeElement as HTMLElement).getElementsByTagName('hc-modal');
+        hcmodal[0].setAttribute('class', options.isResizable ? `hc-modal-resizable hc-modal-${options.size}` : `hc-modal-static hc-modal-${options.size}`);
 
         this._applicationRef.attachView(window.hostView);
         container.appendChild(window.location.nativeElement);
         modal.window = window;
 
-        activeModalRef.close = (result: any) => {
+        setTimeout(() => {
+            window.instance._trapFocus();
+        });
+
+        activeModalRef.close = (result: unknown) => {
             modal.close(result);
         };
 
         activeModalRef.dismiss = () => modal.dismiss();
 
-        this._zIndexCounter += 2;
+        this._modalsOpen++;
+        modal._modalClose.subscribe(() => {
+            this._modalsOpen--;
+            modal._modalClose.unsubscribe();
+
+            if ( modal.window ) {
+                this._restoreFocusAndDestroyTrap( modal.window.instance );
+            }
+
+        });
+
         return modal;
+    }
+
+    /** Restore focus to the element focused before the popover opened. Also destroy trap. */
+    _restoreFocusAndDestroyTrap( modalWindow: ModalWindowComponent ): void {
+        const toFocus = modalWindow._previouslyFocusedElement;
+
+        // Must check active element is focusable for IE sake
+        if (toFocus && 'focus' in toFocus && modalWindow._restoreFocus) {
+            toFocus.focus();
+        }
+
+        if (modalWindow._focusTrap) {
+            modalWindow._focusTrap.destroy();
+        }
     }
 }

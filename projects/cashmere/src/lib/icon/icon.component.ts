@@ -1,4 +1,14 @@
-import {Attribute, Component, ElementRef, HostBinding, Input, OnChanges, SimpleChanges, ViewEncapsulation} from '@angular/core';
+import {Attribute, Component, ElementRef, HostBinding, Input, OnChanges, ViewEncapsulation} from '@angular/core';
+
+/** Object used to pass values that will be used in an IconComponent */
+export interface HcIcon {
+    /** Font set icon is a part of */
+    fontSet: string;
+    /** Name of icon within a font set */
+    fontIcon: string;
+    /** Optional height in pixels of the icon; defaults to 37 */
+    fontSize?: number;
+}
 
 /** Makes using a font icon easier. */
 @Component({
@@ -8,11 +18,11 @@ import {Attribute, Component, ElementRef, HostBinding, Input, OnChanges, SimpleC
     encapsulation: ViewEncapsulation.None
 })
 export class IconComponent implements OnChanges {
-    private _fontIcon: string = '';
-    private _fontSet: string = '';
+    private _fontIcon = '';
+    private _fontSet = '';
 
-    private _previousFontIcon: string = '';
-    private _previousFontSet: string = '';
+    private _previousFontIcon = '';
+    private _previousFontSet = '';
 
     @HostBinding('class.hc-icon')
     _hostClass = true;
@@ -44,7 +54,7 @@ export class IconComponent implements OnChanges {
         }
     }
 
-    ngOnChanges(changes: SimpleChanges): void {
+    ngOnChanges(): void {
         this._updateFontIcon();
     }
 

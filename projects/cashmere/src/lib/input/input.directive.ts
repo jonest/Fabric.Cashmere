@@ -1,4 +1,4 @@
-import {Directive, DoCheck, ElementRef, HostBinding, HostListener, Input, Optional, Self, forwardRef} from '@angular/core';
+import {Directive, DoCheck, ElementRef, HostBinding, HostListener, Input, Optional, Self, forwardRef, Output, EventEmitter} from '@angular/core';
 import {parseBooleanAttribute} from '../util';
 import {HcFormControlComponent} from '../form-field/hc-form-control.component';
 import {FormGroupDirective, NgControl, NgForm} from '@angular/forms';
@@ -18,6 +18,7 @@ const unsupportedTypes = ['button', 'checkbox', 'file', 'hidden', 'image', 'radi
 })
 export class InputDirective extends HcFormControlComponent implements DoCheck {
     private _focused = false;
+    private _mobile = false;
     private _uniqueInputId = `hc-input-${uniqueId++}`;
     private _form: NgForm | FormGroupDirective | null;
 
@@ -59,7 +60,7 @@ export class InputDirective extends HcFormControlComponent implements DoCheck {
         return this._readonly;
     }
 
-    set readonly(isReadOnly) {
+    set readonly(isReadOnly: boolean) {
         this._readonly = parseBooleanAttribute(isReadOnly);
     }
 
@@ -74,7 +75,7 @@ export class InputDirective extends HcFormControlComponent implements DoCheck {
         return this._isDisabled;
     }
 
-    set disabled(disabledInput) {
+    set disabled(disabledInput: boolean) {
         this._isDisabled = parseBooleanAttribute(disabledInput);
 
         if (this._focused) {
@@ -89,9 +90,11 @@ export class InputDirective extends HcFormControlComponent implements DoCheck {
         return this._isRequired;
     }
 
-    set required(requiredInput) {
+    set required(requiredInput: boolean) {
         this._isRequired = parseBooleanAttribute(requiredInput);
     }
+
+    @Output() focusChanged = new EventEmitter<boolean>();
 
     @HostBinding('class.hc-input')
     _hostHcInputClass = true;
@@ -108,7 +111,7 @@ export class InputDirective extends HcFormControlComponent implements DoCheck {
 
     @HostBinding('disabled')
     get _hostDisabled(): boolean {
-        return this._isDisabled;
+        return this.disabled;
     }
 
     @HostBinding('required')
@@ -117,12 +120,12 @@ export class InputDirective extends HcFormControlComponent implements DoCheck {
     }
 
     @HostListener('blur')
-    _onBlur() {
+    _onBlur(): void {
         this._changeFocus(false);
     }
 
     @HostListener('focus')
-    _onFocus() {
+    _onFocus(): void {
         this._changeFocus(true);
     }
 
@@ -139,9 +142,26 @@ export class InputDirective extends HcFormControlComponent implements DoCheck {
     }
 
     @HostListener('input')
-    _inputEvent() {
+    _inputEvent(): void {
         // causes angular to run change detection on input event
     }
+
+    /** Sets whether the input should be sized for small screens (if true, overrides the `tight` param on FormField) */
+    @Input()
+    get mobile(): boolean {
+        return this._mobile;
+    }
+
+    set mobile(value: boolean) {
+        if ( value !== this._mobile ) {
+            this._mobile = value;
+            this.mobileChange.emit( this._mobile );
+        }
+    }
+
+    /** Output for two-way binding on the `mobile` param. Emits when the property is updated */
+    @Output()
+    mobileChange = new EventEmitter<boolean>();
 
     constructor(
         private _elementRef: ElementRef,
@@ -171,7 +191,7 @@ export class InputDirective extends HcFormControlComponent implements DoCheck {
     private _changeFocus(focused: boolean) {
         if (this._focused !== focused && !this.readonly) {
             this._focused = focused;
-            // TODO: trigger state change
+            this.focusChanged.emit(focused);
         }
     }
 
